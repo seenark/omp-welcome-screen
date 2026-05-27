@@ -7,144 +7,228 @@
       "file": "src/WelcomeScreen.ts"
     },
     {
+      "type": "export",
+      "name": "InfoPanelSection",
+      "file": "src/WelcomeOverlay.ts",
+      "line": 527
+    },
+    {
+      "type": "export",
+      "name": "BorderStyleName",
+      "file": "src/WelcomeOverlay.ts",
+      "line": 529
+    },
+    {
       "type": "unlisted",
       "name": "@earendil-works/pi-tui",
-      "file": "src/index.ts",
-      "line": 15
+      "file": "src/WelcomeOverlay.ts",
+      "line": 12
     },
     {
       "type": "export",
       "name": "validateConfig",
       "file": "src/config.ts",
-      "line": 64
+      "line": 80
     },
     {
       "type": "export",
-      "name": "BANNER_LINES1",
-      "file": "src/animations.ts",
-      "line": 22
+      "name": "discoverLoadedCounts",
+      "file": "src/info-panel.ts",
+      "line": 32
     },
     {
       "type": "export",
-      "name": "BANNER_ONE_LINER",
-      "file": "src/animations.ts",
-      "line": 34
-    },
-    {
-      "type": "export",
-      "name": "colorMarker",
-      "file": "src/animations.ts",
-      "line": 190
-    },
-    {
-      "type": "export",
-      "name": "FrameBuilder",
-      "file": "src/animations.ts",
-      "line": 39
+      "name": "getRecentSessions",
+      "file": "src/info-panel.ts",
+      "line": 237
     },
     {
       "type": "export",
       "name": "bgColorToAnsi",
       "file": "src/renderer.ts",
-      "line": 48
+      "line": 47
     },
     {
       "type": "export",
       "name": "colorize",
       "file": "src/renderer.ts",
-      "line": 60
+      "line": 59
+    },
+    {
+      "type": "export",
+      "name": "centerLine",
+      "file": "src/renderer.ts",
+      "line": 67
     },
     {
       "type": "export",
       "name": "stripAnsi",
       "file": "src/renderer.ts",
-      "line": 90
-    },
-    {
-      "type": "export",
-      "name": "visibleWidth",
-      "file": "src/renderer.ts",
-      "line": 97
+      "line": 103
     },
     {
       "type": "export",
       "name": "rainbowLine",
       "file": "src/renderer.ts",
-      "line": 155
+      "line": 168
     },
     {
       "type": "export",
       "name": "rainbowLines",
       "file": "src/renderer.ts",
-      "line": 169
+      "line": 182
+    },
+    {
+      "type": "export",
+      "name": "buildOverlayBox",
+      "file": "src/renderer.ts",
+      "line": 213
+    },
+    {
+      "type": "export",
+      "name": "buildEmptyBox",
+      "file": "src/renderer.ts",
+      "line": 285
+    },
+    {
+      "type": "export",
+      "name": "BANNER_COMPACT",
+      "file": "src/animations.ts",
+      "line": 26
+    },
+    {
+      "type": "export",
+      "name": "BANNER_ONE_LINER",
+      "file": "src/animations.ts",
+      "line": 32
+    },
+    {
+      "type": "export",
+      "name": "colorMarker",
+      "file": "src/animations.ts",
+      "line": 186
+    },
+    {
+      "type": "export",
+      "name": "FrameBuilder",
+      "file": "src/animations.ts",
+      "line": 37
+    },
+    {
+      "type": "export",
+      "name": "InfoPanelSection",
+      "file": "src/types.ts",
+      "line": 15
     }
   ],
   "unusedExports": [
     {
       "type": "export",
+      "name": "InfoPanelSection",
+      "file": "src/WelcomeOverlay.ts",
+      "line": 527
+    },
+    {
+      "type": "export",
+      "name": "BorderStyleName",
+      "file": "src/WelcomeOverlay.ts",
+      "line": 529
+    },
+    {
+      "type": "export",
       "name": "validateConfig",
       "file": "src/config.ts",
-      "line": 64
+      "line": 80
     },
     {
       "type": "export",
-      "name": "BANNER_LINES1",
-      "file": "src/animations.ts",
-      "line": 22
+      "name": "discoverLoadedCounts",
+      "file": "src/info-panel.ts",
+      "line": 32
     },
     {
       "type": "export",
-      "name": "BANNER_ONE_LINER",
-      "file": "src/animations.ts",
-      "line": 34
-    },
-    {
-      "type": "export",
-      "name": "colorMarker",
-      "file": "src/animations.ts",
-      "line": 190
-    },
-    {
-      "type": "export",
-      "name": "FrameBuilder",
-      "file": "src/animations.ts",
-      "line": 39
+      "name": "getRecentSessions",
+      "file": "src/info-panel.ts",
+      "line": 237
     },
     {
       "type": "export",
       "name": "bgColorToAnsi",
       "file": "src/renderer.ts",
-      "line": 48
+      "line": 47
     },
     {
       "type": "export",
       "name": "colorize",
       "file": "src/renderer.ts",
-      "line": 60
+      "line": 59
+    },
+    {
+      "type": "export",
+      "name": "centerLine",
+      "file": "src/renderer.ts",
+      "line": 67
     },
     {
       "type": "export",
       "name": "stripAnsi",
       "file": "src/renderer.ts",
-      "line": 90
-    },
-    {
-      "type": "export",
-      "name": "visibleWidth",
-      "file": "src/renderer.ts",
-      "line": 97
+      "line": 103
     },
     {
       "type": "export",
       "name": "rainbowLine",
       "file": "src/renderer.ts",
-      "line": 155
+      "line": 168
     },
     {
       "type": "export",
       "name": "rainbowLines",
       "file": "src/renderer.ts",
-      "line": 169
+      "line": 182
+    },
+    {
+      "type": "export",
+      "name": "buildOverlayBox",
+      "file": "src/renderer.ts",
+      "line": 213
+    },
+    {
+      "type": "export",
+      "name": "buildEmptyBox",
+      "file": "src/renderer.ts",
+      "line": 285
+    },
+    {
+      "type": "export",
+      "name": "BANNER_COMPACT",
+      "file": "src/animations.ts",
+      "line": 26
+    },
+    {
+      "type": "export",
+      "name": "BANNER_ONE_LINER",
+      "file": "src/animations.ts",
+      "line": 32
+    },
+    {
+      "type": "export",
+      "name": "colorMarker",
+      "file": "src/animations.ts",
+      "line": 186
+    },
+    {
+      "type": "export",
+      "name": "FrameBuilder",
+      "file": "src/animations.ts",
+      "line": 37
+    },
+    {
+      "type": "export",
+      "name": "InfoPanelSection",
+      "file": "src/types.ts",
+      "line": 15
     }
   ],
   "unusedFiles": [
@@ -159,9 +243,9 @@
     {
       "type": "unlisted",
       "name": "@earendil-works/pi-tui",
-      "file": "src/index.ts",
-      "line": 15
+      "file": "src/WelcomeOverlay.ts",
+      "line": 12
     }
   ],
-  "summary": "Found 13 issues"
+  "summary": "Found 20 issues"
 }

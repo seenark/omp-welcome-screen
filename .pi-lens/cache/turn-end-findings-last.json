@@ -1,4 +1,6 @@
 {
-  "signature": "src/renderer.ts|src/WelcomeScreen.ts::ℹ️ Advisory — no action required this turn:\n⚠️ Newly unused exports in modified files — check if callers need updating (Knip):\n  src/renderer.ts:155 — rainbowLine\n  src/renderer.ts:169 — rainbowLines\n",
-  "sessionId": "lens-mpl4ffrq-a3d0a332"
+  "signature": "src/WelcomeOverlay.ts::ℹ️ Advisory — no action required this turn:\n⚠️ Newly unused exports in modified files — check if callers need updating (Knip):\n  src/WelcomeOverlay.ts:527 — InfoPanelSection\n  src/WelcomeOverlay.ts:529 — BorderStyleName\n",
+  "sessionId": "lens-mpnz4jol-4e2a2439",
+  "projectSeqStart": 21,
+  "projectSeqEnd": 22
 }

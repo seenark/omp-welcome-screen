@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "createdAt": "2026-05-25T11:26:37.002Z",
+  "createdAt": "2026-05-27T06:07:39.502Z",
   "entries": [
     [
       "src/animations.ts:buildWaveFrames",
@@ -4230,15 +4230,16 @@
           ]
         ],
         "transitionCount": 36,
-        "lastModified": 1779707470482.2148,
+        "lastModified": 1779710881262.193,
         "exports": [
           "BANNER_LINES",
+          "BANNER_LINES1",
           "BANNER_ONE_LINER",
           "buildAnimationFrames",
           "colorMarker",
           "getFrameCount"
         ],
-        "line": 58
+        "line": 75
       }
     ],
     [
@@ -6658,16 +6659,16 @@
             0,
             0,
             0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
             1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
             0,
             0,
             0,
@@ -7916,7 +7917,7 @@
             0,
             0,
             0,
-            1,
+            2,
             0,
             0,
             0,
@@ -8469,15 +8470,16 @@
           ]
         ],
         "transitionCount": 38,
-        "lastModified": 1779707470482.2148,
+        "lastModified": 1779710881262.193,
         "exports": [
           "BANNER_LINES",
+          "BANNER_LINES1",
           "BANNER_ONE_LINER",
           "buildAnimationFrames",
           "colorMarker",
           "getFrameCount"
         ],
-        "line": 71
+        "line": 93
       }
     ],
     [
@@ -12708,15 +12710,16 @@
           ]
         ],
         "transitionCount": 35,
-        "lastModified": 1779707470482.2148,
+        "lastModified": 1779710881262.193,
         "exports": [
           "BANNER_LINES",
+          "BANNER_LINES1",
           "BANNER_ONE_LINER",
           "buildAnimationFrames",
           "colorMarker",
           "getFrameCount"
         ],
-        "line": 85
+        "line": 123
       }
     ],
     [
@@ -16947,15 +16950,16 @@
           ]
         ],
         "transitionCount": 42,
-        "lastModified": 1779707470482.2148,
+        "lastModified": 1779710881262.193,
         "exports": [
           "BANNER_LINES",
+          "BANNER_LINES1",
           "BANNER_ONE_LINER",
           "buildAnimationFrames",
           "colorMarker",
           "getFrameCount"
         ],
-        "line": 100
+        "line": 141
       }
     ],
     [
@@ -21186,15 +21190,16 @@
           ]
         ],
         "transitionCount": 32,
-        "lastModified": 1779707470482.2148,
+        "lastModified": 1779710881262.193,
         "exports": [
           "BANNER_LINES",
+          "BANNER_LINES1",
           "BANNER_ONE_LINER",
           "buildAnimationFrames",
           "colorMarker",
           "getFrameCount"
         ],
-        "line": 117
+        "line": 168
       }
     ],
     [
@@ -25425,15 +25430,16 @@
           ]
         ],
         "transitionCount": 38,
-        "lastModified": 1779707470482.2148,
+        "lastModified": 1779710881262.193,
         "exports": [
           "BANNER_LINES",
+          "BANNER_LINES1",
           "BANNER_ONE_LINER",
           "buildAnimationFrames",
           "colorMarker",
           "getFrameCount"
         ],
-        "line": 141
+        "line": 195
       }
     ],
     [
@@ -29664,15 +29670,16 @@
           ]
         ],
         "transitionCount": 34,
-        "lastModified": 1779707470482.2148,
+        "lastModified": 1779710881262.193,
         "exports": [
           "BANNER_LINES",
+          "BANNER_LINES1",
           "BANNER_ONE_LINER",
           "buildAnimationFrames",
           "colorMarker",
           "getFrameCount"
         ],
-        "line": 152
+        "line": 206
       }
     ],
     [
@@ -33903,14 +33910,14 @@
           ]
         ],
         "transitionCount": 33,
-        "lastModified": 1779707470482.38,
+        "lastModified": 1779710927490.9788,
         "exports": [
           "DEFAULT_CONFIG",
           "loadConfig",
           "validateConfig",
           "CATPPUCCIN_MOCHA"
         ],
-        "line": 38
+        "line": 40
       }
     ],
     [
@@ -38141,14 +38148,14 @@
           ]
         ],
         "transitionCount": 37,
-        "lastModified": 1779707470482.38,
+        "lastModified": 1779710927490.9788,
         "exports": [
           "DEFAULT_CONFIG",
           "loadConfig",
           "validateConfig",
           "CATPPUCCIN_MOCHA"
         ],
-        "line": 62
+        "line": 64
       }
     ],
     [

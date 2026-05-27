@@ -2,23 +2,31 @@
   "success": true,
   "clones": [
     {
+      "fileA": "src/info-panel.ts",
+      "startA": 247,
+      "fileB": "src/info-panel.ts",
+      "startB": 199,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
       "fileA": "src/animations.ts",
-      "startA": 123,
+      "startA": 119,
       "fileB": "src/animations.ts",
-      "startB": 75,
+      "startB": 73,
       "lines": 8,
       "tokens": 0
     },
     {
       "fileA": "src/animations.ts",
-      "startA": 141,
+      "startA": 137,
       "fileB": "src/animations.ts",
-      "startB": 75,
+      "startB": 73,
       "lines": 9,
       "tokens": 0
     }
   ],
-  "duplicatedLines": 15,
-  "totalLines": 822,
-  "percentage": 1.82
+  "duplicatedLines": 24,
+  "totalLines": 1844,
+  "percentage": 1.3
 }

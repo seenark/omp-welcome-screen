@@ -1,0 +1,145 @@
+{
+  "version": 1,
+  "projectRoot": "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen",
+  "generatedAt": "2026-05-27T11:49:06.239Z",
+  "seq": 22,
+  "files": {
+    "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen/src/animations.ts": {
+      "path": "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen/src/animations.ts",
+      "mtimeMs": 1779875010141.7998,
+      "size": 7378,
+      "imports": [],
+      "lastSeq": 0
+    },
+    "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen/src/config.ts": {
+      "path": "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen/src/config.ts",
+      "mtimeMs": 1779876236095.5786,
+      "size": 4354,
+      "imports": [],
+      "lastSeq": 0
+    },
+    "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen/src/index.ts": {
+      "path": "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen/src/index.ts",
+      "mtimeMs": 1779875010096.1328,
+      "size": 4434,
+      "imports": [],
+      "lastSeq": 0
+    },
+    "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen/src/renderer.ts": {
+      "path": "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen/src/renderer.ts",
+      "mtimeMs": 1779878192391.5015,
+      "size": 10004,
+      "imports": [],
+      "lastSeq": 0
+    },
+    "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen/src/types.ts": {
+      "path": "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen/src/types.ts",
+      "mtimeMs": 1779878732141.4917,
+      "size": 3213,
+      "imports": [],
+      "lastSeq": 0
+    },
+    "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen/src/WelcomeOverlay.ts": {
+      "path": "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen/src/WelcomeOverlay.ts",
+      "mtimeMs": 1779878224507.672,
+      "size": 7801,
+      "imports": [],
+      "lastSeq": 0
+    },
+    "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen/src/WelcomeScreen.ts": {
+      "path": "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen/src/WelcomeScreen.ts",
+      "mtimeMs": 1779875015186.809,
+      "size": 497,
+      "imports": [],
+      "lastSeq": 0
+    },
+    "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen/src/info-panel.ts": {
+      "path": "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen/src/info-panel.ts",
+      "mtimeMs": 1779878772934.6868,
+      "size": 9610,
+      "imports": [],
+      "lastSeq": 0
+    }
+  },
+  "symbols": {},
+  "reverseDeps": {
+    "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen/src/animations.ts": [],
+    "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen/src/config.ts": [],
+    "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen/src/index.ts": [],
+    "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen/src/info-panel.ts": [],
+    "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen/src/renderer.ts": [],
+    "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen/src/types.ts": [],
+    "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen/src/WelcomeOverlay.ts": [],
+    "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen/src/WelcomeScreen.ts": []
+  },
+  "cachedExports": [],
+  "projectRulesScan": {
+    "rules": [
+      {
+        "source": "root",
+        "name": "AGENTS.md",
+        "filePath": "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen/AGENTS.md",
+        "relativePath": "AGENTS.md"
+      }
+    ],
+    "hasCustomRules": true
+  },
+  "projectIndex": {
+    "entryCount": 14
+  },
+  "startupScan": {
+    "cwd": "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen",
+    "scanRoot": "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen",
+    "projectRoot": "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen",
+    "canWarmCaches": true,
+    "sourceFileCount": 8
+  },
+  "languageProfile": {
+    "present": {
+      "jsts": true,
+      "python": false,
+      "go": false,
+      "rust": false,
+      "cxx": false,
+      "cmake": false,
+      "fish": false,
+      "shell": false,
+      "json": false,
+      "markdown": false,
+      "css": false,
+      "yaml": false,
+      "sql": false,
+      "ruby": false,
+      "html": false,
+      "docker": false,
+      "php": false,
+      "powershell": false,
+      "prisma": false,
+      "csharp": false,
+      "fsharp": false,
+      "java": false,
+      "kotlin": false,
+      "swift": false,
+      "dart": false,
+      "lua": false,
+      "zig": false,
+      "haskell": false,
+      "elixir": false,
+      "gleam": false,
+      "ocaml": false,
+      "clojure": false,
+      "terraform": false,
+      "nix": false,
+      "toml": false
+    },
+    "configured": {
+      "jsts": true
+    },
+    "counts": {
+      "jsts": 8
+    },
+    "detectedKinds": [
+      "jsts"
+    ]
+  }
+}

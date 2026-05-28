@@ -79,7 +79,7 @@ Or point to any file via config:
 
 Create a config file — only the fields you want to override are needed:
 
-**`~/.pi/welcome-screen.config.json`**
+**`~/.pi/agent/pi-welcome-screen/settings.json`**
 
 ```json
 {
@@ -95,8 +95,8 @@ Create a config file — only the fields you want to override are needed:
 
 **Config file search order** (first found wins):
 
-1. `~/.pi/welcome-screen.config.json`
-2. `~/.pi/config/welcome-screen.json`
+1. `~/.pi/agent/pi-welcome-screen/settings.json`
+2. `~/.pi/welcome-screen.config.json` (legacy)
 3. `./welcome-screen.config.json` (project root)
 
 ### All Options

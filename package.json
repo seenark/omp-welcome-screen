@@ -1,35 +1,38 @@
 {
-  "name": "@codesook/pi-welcome-screen",
-  "version": "0.3.0",
-  "description": "Customizable animated ASCII art welcome overlay for pi coding agent — shows on session start with countdown and auto-dismiss",
-  "type": "module",
-  "files": [
-    "src/",
-    "README.md",
-    "AGENTS.md"
-  ],
-  "keywords": [
-    "pi-package",
-    "pi",
-    "coding-agent",
-    "welcome",
-    "ascii",
-    "extension"
-  ],
-  "author": "Code Sook",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/seenark/pi-welcome-screen"
-  },
-  "scripts": {
-    "build": "echo 'No build needed — Pi loads TypeScript extensions via jiti'",
-    "test": "echo 'No tests yet'"
-  },
-  "peerDependencies": {
-    "@earendil-works/pi-coding-agent": "*"
-  },
-  "pi": {
-    "extensions": ["./src/index.ts"]
-  }
+    "name": "@codesook/pi-welcome-screen",
+    "version": "0.3.1",
+    "description": "Customizable animated ASCII art welcome overlay for pi coding agent — shows on session start with countdown and auto-dismiss",
+    "type": "module",
+    "files": [
+        "src/",
+        "README.md",
+        "AGENTS.md"
+    ],
+    "keywords": [
+        "pi-package",
+        "pi",
+        "coding-agent",
+        "welcome",
+        "ascii",
+        "extension"
+    ],
+    "author": "Code Sook",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/seenark/pi-welcome-screen"
+    },
+    "scripts": {
+        "build": "echo 'No build needed — Pi loads TypeScript extensions via jiti'",
+        "test": "echo 'No tests yet'",
+        "publish": "npm publish --access public"
+    },
+    "peerDependencies": {
+        "@earendil-works/pi-coding-agent": "*"
+    },
+    "pi": {
+        "extensions": [
+            "./src/index.ts"
+        ]
+    }
 }

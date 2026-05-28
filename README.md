@@ -51,21 +51,22 @@ Replace the built-in ASCII banner with your own art. Create a plain text file:
 
 **`~/.pi/agent/pi-welcome-screen/banner.txt`**
 
-````
+```
  ██████╗ ██████╗ ██████╗ ███████╗    ███████╗ ██████╗  ██████╗ ██╗  ██╗
 ██╔════╝██╔═══██╗██╔══██╗██╔════╝    ██╔════╝██╔═══██╗██╔═══██╗██║ ██╔╝
 ██║     ██║   ██║██║  ██║█████╗      ███████╗██║   ██║██║   ██║█████╔╝
 ██║     ██║   ██║██║  ██║██╔══╝      ╚════██║██║   ██║██║   ██║██╔═██╗
 ╚██████╗╚██████╔╝██████╔╝███████╗    ███████║╚██████╔╝╚██████╔╝██║  ██╗
- ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝    ╚══════╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝```
+ ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝    ╚══════╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝
+```
 
 Or point to any file via config:
 
 ```json
 {
-  "bannerFile": "/path/to/my-banner.txt"
+    "bannerFile": "/path/to/my-banner.txt"
 }
-````
+```
 
 **Search order** (first found wins):
 
@@ -268,16 +269,6 @@ All color options accept these names:
     "bannerFile": "~/.pi/agent/pi-welcome-screen/banner.txt",
     "animationStyle": "rainbow",
     "animationColor": "green"
-}
-```
-
-## 🤝 Compatibility
-
-**pi-powerline-footer** — if you use [pi-powerline-footer](https://github.com/nicobailon/pi-powerline-footer), disable its welcome screen to avoid conflicts:
-
-```json
-{
-    "powerline": { "welcome": false }
 }
 ```
 

@@ -30,6 +30,9 @@ export const DEFAULT_CONFIG: WelcomeConfig = {
 	// ─── Debug Mode ──────────────────────────────────────────────────────────────────
 	debug: false, // When true, overlay stays visible forever (never auto-dismisses)
 
+	// ─── Scrolling ──────────────────────────────────────────────────────────────────
+	enableScrolling: true, // When true, overlay supports arrow-key scrolling and doesn't capture all keys
+
 	// ─── Visibility Toggles (all default true) ─────────────────────────────────
 	showBanner: true,
 	showMainText: true,

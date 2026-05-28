@@ -21,6 +21,7 @@ import {
 	ansi,
 	resolveColorMarkers,
 	buildAnimationColorMap,
+	normalizeBannerWidth,
 } from "./renderer.js";
 import {
 	BANNER_LINES,
@@ -43,6 +44,8 @@ export class WelcomeOverlay implements Component {
 	private tui: { requestRender(): void } | null = null;
 	private infoData: InfoPanelData;
 	private bannerLines: string[];
+	private scrollOffset: number = 0;
+	private cachedContentLines: string[] = [];
 
 	constructor(
 		config: WelcomeConfig,
@@ -53,7 +56,7 @@ export class WelcomeOverlay implements Component {
 		this.config = config;
 		this.countdown = config.countdown;
 		this.done = done;
-		this.bannerLines = bannerLines ?? BANNER_LINES;
+		this.bannerLines = normalizeBannerWidth(bannerLines ?? BANNER_LINES);
 		this.infoData = infoData ?? {
 			modelName: config.modelName || "pi agent",
 			providerName: config.providerName || "pi",
@@ -108,10 +111,47 @@ export class WelcomeOverlay implements Component {
 		this.initFrames();
 	}
 
-	/** Handle keyboard input — any key dismisses the overlay (unless debug mode) */
-	handleInput(_data: string): void {
+	/** Handle keyboard input — Escape dismisses, arrows scroll */
+	handleInput(data: string): void {
 		if (this.config.debug) return;
-		this.dismiss();
+
+		// Escape key sequences
+		if (data === "\x1b" || data === "\x1b[" || data === "\x1b[27") {
+			this.dismiss();
+			return;
+		}
+
+		// Enter key (CR or LF)
+		if (data === "\r" || data === "\n") {
+			this.dismiss();
+			return;
+		}
+
+		// Arrow keys for scrolling
+		if (this.config.enableScrolling) {
+			if (data === "\x1b[A" || data === "\x1bOA") {
+				// Up arrow
+				if (this.scrollOffset > 0) {
+					this.scrollOffset--;
+					this.tui?.requestRender();
+				}
+				return;
+			}
+			if (data === "\x1b[B" || data === "\x1bOB") {
+				// Down arrow
+				const maxOffset = Math.max(
+					0,
+					this.cachedContentLines.length - this.getVisibleLineCount(),
+				);
+				if (this.scrollOffset < maxOffset) {
+					this.scrollOffset++;
+					this.tui?.requestRender();
+				}
+				return;
+			}
+		}
+
+		// All other keys: do nothing (no longer captures)
 	}
 
 	/** Dismiss the overlay and clean up timers */
@@ -148,6 +188,22 @@ export class WelcomeOverlay implements Component {
 	/** Check if overlay has been dismissed */
 	isDismissed(): boolean {
 		return this.dismissed;
+	}
+
+	/** Calculate the max content lines that fit in the terminal.
+	 * Reserves 2 lines for top/bottom borders + 1 for hint = 3 overhead.
+	 * Uses ~80% of terminal height to leave room for the TUI behind.
+	 */
+	private getVisibleLineCount(): number {
+		const termRows =
+			typeof process !== "undefined" && process.stdout?.rows
+				? process.stdout.rows
+				: 24;
+		// Reserve 3 lines for border top + hint + border bottom
+		const overhead = 3;
+		// Use 80% of terminal height so user can see the TUI behind
+		const maxRows = Math.floor(termRows * 0.8) - overhead;
+		return Math.max(maxRows, 5); // at least 5 lines
 	}
 
 	/**
@@ -207,15 +263,37 @@ export class WelcomeOverlay implements Component {
 			contentLines = this.buildSingleColumnContent(innerWidth);
 		}
 
-		// Build the "press any key" hint
+		// Cache for scroll calculations
+		this.cachedContentLines = contentLines;
+
+		// Build the hint text
 		let hintText = "";
 		if (this.config.showCountdown) {
-			if (this.config.countdown > 0) {
+			if (this.config.enableScrolling) {
+				const totalLines = contentLines.length;
+				const visibleLines = this.getVisibleLineCount();
+				if (totalLines > visibleLines) {
+					const scrolled =
+						this.scrollOffset > 0 ||
+						this.scrollOffset + visibleLines < totalLines;
+					hintText = scrolled
+						? `Esc/Enter dismiss · ↑↓ scroll (${this.scrollOffset + 1}-${Math.min(this.scrollOffset + visibleLines, totalLines)}/${totalLines})`
+						: `Esc/Enter dismiss · ↑↓ scroll`;
+				} else {
+					hintText = "Esc/Enter dismiss";
+				}
+			} else if (this.config.countdown > 0) {
 				hintText = `Press any key to continue (${this.countdown}s)`;
 			} else if (this.config.countdown === -1) {
 				hintText = "Press any key to continue";
 			}
 		}
+
+		// Apply scroll offset — show only visible portion of content
+		const maxVisible = this.getVisibleLineCount();
+		const scrollableContent = this.config.enableScrolling
+			? contentLines.slice(this.scrollOffset, this.scrollOffset + maxVisible)
+			: contentLines;
 
 		const lines: string[] = [];
 
@@ -229,7 +307,7 @@ export class WelcomeOverlay implements Component {
 		// Content lines — pad each to innerWidth so the right border
 		// always appears at the correct position (handles short text,
 		// empty lines, and ANSI-colored content correctly via fitLine).
-		for (const line of contentLines) {
+		for (const line of scrollableContent) {
 			if (this.config.showBorder) {
 				const padded = fitLine(line, innerWidth);
 				lines.push(

@@ -53,6 +53,11 @@ export interface WelcomeConfig {
 	/** Debug mode: overlay stays visible forever, never auto-dismisses */
 	debug: boolean;
 
+	// ─── Scrolling ──────────────────────────────────────────────────────────────────
+
+	/** Enable scroll mode: overlay doesn't capture all keys, supports arrow-key scrolling */
+	enableScrolling: boolean;
+
 	// ─── Overlay-specific options ───────────────────────────────────────────────
 
 	/** Border style: 'rounded', 'square', 'double', 'minimal' */

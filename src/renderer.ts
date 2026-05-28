@@ -51,6 +51,28 @@ export function bgColorToAnsi(colorName: string): string {
 	return ansi.bg(r, g, b);
 }
 
+// ─── Banner Normalization ───────────────────────────────────────────────────────
+
+/**
+ * Normalize banner lines to equal visible width by right-padding shorter lines
+ * with spaces. This ensures `centerPadLine()` produces consistent left-padding
+ * for every line, preventing visual misalignment when custom banner files
+ * have lines of different widths.
+ *
+ * Handles ANSI escape codes correctly — only visible characters are measured.
+ */
+export function normalizeBannerWidth(lines: string[]): string[] {
+	if (lines.length === 0) return lines;
+
+	const maxLen = Math.max(...lines.map((l) => stripAnsi(l).length));
+
+	return lines.map((line) => {
+		const visibleLen = stripAnsi(line).length;
+		if (visibleLen >= maxLen) return line;
+		return line + " ".repeat(maxLen - visibleLen);
+	});
+}
+
 // ─── Line Rendering ───────────────────────────────────────────────────────────
 
 /**

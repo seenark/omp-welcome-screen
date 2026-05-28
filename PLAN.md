@@ -1,74 +1,144 @@
-# Plan: Fix Overlay Right Border Alignment
+# Plan: Configurable Fields with Show/Hide + External Banner Files
 
 ## Context
 
-The overlay box's right border (`│`) appears too close to the text content instead of maintaining consistent width. When there's no text, the right border collapses toward the left. When there is text, it hugs the text rather than staying at the full `innerWidth` position.
-
-## Root Cause
-
-In `WelcomeOverlay.ts`, the `buildOverlayLines()` method wraps each content line with borders:
-
-```ts
-`${dimColor}${b.v}${ansi.reset}${line}${dimColor}${b.v}${ansi.reset}`
-```
-
-There is **no padding** between the `line` content and the right border. The right border is placed immediately after whatever `line` contains. If `line` is shorter than `innerWidth` visible characters, the right border appears too far left.
-
-### Specific unpadded lines in `buildSingleColumnContent()`:
-
-1. **Empty spacer lines** — `lines.push("")` and `lines.push("")` around the separator — these are empty strings, so the right border appears right after the left border.
-
-2. **Info panel content lines** — `this.buildInfoPanelContent(innerWidth)` returns lines that are NOT padded to `innerWidth`. They have short content like `" Model"`, `" gpt-4o"`, etc.
-
-3. **Separator line** — `dimColor + "─".repeat(innerWidth) + ansi.reset` — this one IS correctly padded to `innerWidth`. ✅
-
-4. **Padding lines** — `" ".repeat(innerWidth)` — these are correctly padded. ✅
-
-5. **Banner/text lines** — these use `centerPadLine()` which pads to full width. ✅
-
-### The two-column path (`buildTwoColumnContent`) is NOT affected because:
-- `fitLine()` pads both left and right columns to their exact widths
-- The separator `" │ "` fills the gap
-- Total visible width = `innerWidth` ✅
+The pi-welcome-screen currently has hardcoded banner art and no per-field visibility toggles. The user wants:
+1. **Every visual field** to be hideable via config (default: shown)
+2. **Banner art** loadable from external `.txt` files (fallback to built-in default)
+3. Banners always centered after loading
+4. The current "CodeSook" banner remains the default
 
 ## Approach
 
-### Fix 1: Pad content lines to `innerWidth` before wrapping with borders
+### A. Add `show*` visibility toggles to `WelcomeConfig` for ALL visual fields
 
-The cleanest fix is to ensure every content line passed into `buildOverlayLines()` has exactly `innerWidth` visible characters. This way the right border always appears at the correct position.
+Every piece of visible content gets its own boolean toggle. All default `true`.
 
-Two options:
+**Banner area (left column / single-column top):**
 
-**Option A (Recommended): Pad in `buildOverlayLines()` itself**
-- After receiving content lines, pad each one to `innerWidth` using `fitLine()` or a simple visible-length pad
-- This catches ALL lines regardless of which layout path produced them (single-column, two-column, future layouts)
-- Single point of fix, can't be bypassed by future code paths
+| Field | Controls | Default |
+|-------|----------|---------|
+| `showBanner` | ASCII art banner | `true` |
+| `showMainText` | Main text line ("CodeSook") | `true` |
+| `showUrl` | URL line ("https://codesook.dev") | `true` |
+| `showCountdown` | "Press any key (Ns)" hint | `true` |
+| `showPadding` | Top/bottom empty lines | `true` |
+| `showBorder` | Border box around overlay | `true` |
 
-**Option B: Pad in each content builder individually**
-- Fix `buildSingleColumnContent()` to pad info panel lines and empty lines
-- More scattered, easier to miss a line
+**Info panel sections (right column / single-column bottom):**
 
-Going with **Option A**.
+| Field | Controls | Default |
+|-------|----------|---------|
+| `showInfoPanel` | Entire info panel | `true` (already exists) |
+| `showVersion` | Pi version + keybindings | `true` |
+| `showModel` | Model name + provider | `true` |
+| `showTips` | Keyboard tips | `true` |
+| `showLoaded` | Loaded counts (ctx, ext, skills…) | `true` |
+| `showResources` | Detailed resource listings | `true` |
+| `showSessions` | Recent sessions | `true` |
+
+This replaces the old `infoPanelSections` array — individual booleans are simpler and consistent. Keep `infoPanelSections` for backward compat (deprecated): if present in config, it maps to the corresponding `show*` booleans.
+
+### B. External banner file loading (`.txt` only)
+
+**File format — plain text:**
+```
+ ██████╗ ██████╗ ██████╗ ███████╗    ███████╗ ██████╗  ██████╗ ██╗  ██╗
+██╔════╝██╔═══██╗██╔══██╗██╔════╝    ██╔════╝██╔═══██╗██╔═══██╗██║ ██╔╝
+```
+Each line = one line of banner art. Split by `\n`, strip leading/trailing blank lines. Render each line centered via `centerPadLine()`.
+
+**Search paths** (first found wins):
+1. `bannerFile` from config JSON (explicit path, if set)
+2. `~/.pi/welcome-screen.banner.txt`
+3. `~/.pi/config/welcome-screen.banner.txt`
+4. `./welcome-screen.banner.txt`
+
+If no banner file found → use built-in `BANNER_LINES` (current default).
+
+### C. Config file additions
+
+New fields in the JSON config:
+
+```jsonc
+{
+  // Visibility toggles (all default true)
+  "showBanner": true,
+  "showMainText": true,
+  "showUrl": true,
+  "showCountdown": true,
+  "showPadding": true,
+  "showBorder": true,
+  "showInfoPanel": true,
+  "showVersion": true,
+  "showModel": true,
+  "showTips": true,
+  "showLoaded": true,
+  "showResources": true,
+  "showSessions": true,
+
+  // Banner file (optional — omit to use built-in)
+  "bannerFile": "/path/to/my-banner.txt"
+}
+```
 
 ## Files to Modify
 
-- `src/WelcomeOverlay.ts` — Add padding logic in `buildOverlayLines()` for content lines
+### `src/types.ts`
+- Add new boolean fields to `WelcomeConfig`: `showBanner`, `showMainText`, `showUrl`, `showCountdown`, `showPadding`, `showBorder`, `showVersion`, `showModel`, `showTips`, `showLoaded`, `showResources`, `showSessions`
+- Add `bannerFile: string` field
+- Deprecate `infoPanelSections` (keep type for backward compat)
+
+### `src/config.ts`
+- Add defaults for all new fields to `DEFAULT_CONFIG` (all `true` except `bannerFile: ""`)
+- Add `loadBannerFile(config)` function — reads `.txt` from search paths, returns `string[]` of banner lines or `null` if not found
+- Add backward-compat mapping: if old `infoPanelSections` is present in user config, set the corresponding `show*` booleans
+
+### `src/animations.ts`
+- `buildAnimationFrames()` already accepts `bannerLines: string[]` — no signature change needed
+- `getFrameCount()` unchanged
+
+### `src/WelcomeOverlay.ts`
+- `buildLeftColumnContent()`: guard banner with `showBanner`, main text with `showMainText`, URL with `showUrl`, padding with `showPadding`
+- `buildSingleColumnContent()`: same guards
+- `buildOverlayLines()`: guard border rendering with `showBorder`, countdown hint with `showCountdown`
+- `buildInfoPanelContent()`: replace `sections.includes("version")` checks with `this.config.showVersion` etc.
+- Constructor: accept optional `bannerLines: string[]` override, use in `initFrames()`
+- `initFrames()`: use the provided banner lines instead of hardcoded `BANNER_LINES`
+
+### `src/index.ts`
+- Call `loadBannerFile(config)` to get custom banner lines
+- Pass resolved lines into `WelcomeOverlay` constructor
 
 ## Reuse
 
-- `fitLine()` from `src/renderer.ts` — already pads lines to a given visible width, preserving ANSI codes
-- `visibleWidth()` from `src/renderer.ts` — calculates visible character count
+- `centerPadLine()` in `src/renderer.ts` — already centers + pads lines correctly
+- `loadConfig()` / `loadConfigFile()` in `src/config.ts` — extend with banner file loading
+- `BANNER_LINES` in `src/animations.ts` — stays as default fallback
+- `WelcomeConfig` in `src/types.ts` — extend with new fields
+- `existsSync`, `readFileSync` from `node:fs` — already used in info-panel.ts
 
 ## Steps
 
-- [ ] In `buildOverlayLines()`, after `contentLines` is computed (from either single or two-column path), iterate over each line and pad it to `innerWidth` using `fitLine()` before wrapping with borders
-- [ ] Ensure the padding handles ANSI-colored lines correctly (visible width vs byte length)
-- [ ] Verify empty lines (`""`) are padded to `innerWidth` spaces so right border appears at correct position
+- [ ] Add all new config fields to `src/types.ts` (`WelcomeConfig`)
+- [ ] Add defaults in `src/config.ts` (`DEFAULT_CONFIG`)
+- [ ] Implement `loadBannerFile()` in `src/config.ts` — parse `.txt`, search paths, return `string[] | null`
+- [ ] Add backward-compat mapping for deprecated `infoPanelSections` in `loadConfig()`
+- [ ] Update `src/WelcomeOverlay.ts` — accept optional banner lines in constructor
+- [ ] Add `show*` guards in `buildLeftColumnContent()`, `buildSingleColumnContent()`, `buildOverlayLines()`, `buildInfoPanelContent()`
+- [ ] Update `src/index.ts` — call `loadBannerFile()`, pass result to overlay
+- [ ] Verify all defaults match current behavior (no breaking change)
 
 ## Verification
 
-1. Run the overlay in a terminal — the right border should be a uniform vertical line regardless of content
-2. Test with info panel visible (single-column, narrow terminal) — info text should have whitespace padding to the right border
-3. Test with empty lines — right border should stay at full width
-4. Test two-column layout — should remain unchanged (already correct)
-5. Run existing tests if any
+1. **No config file present** → behavior identical to current (built-in banner, all fields shown)
+2. **Config with `"showBanner": false`** → banner hidden, rest still visible
+3. **Config with `"showMainText": false, "showUrl": false`** → banner visible, text lines hidden
+4. **Config with `"showBorder": false`** → no border box rendered, content flows freely
+5. **Config with `"showPadding": false`** → no top/bottom empty lines
+6. **Config with `"showVersion": false`** → version section hidden in info panel
+7. **Individual section hide** → each of `showModel`, `showTips`, `showLoaded`, `showResources`, `showSessions` hides its section
+8. **Banner `.txt` file** at `~/.pi/welcome-screen.banner.txt` → custom banner loaded, centered
+9. **Invalid/missing banner file** → falls back to built-in `BANNER_LINES`
+10. **Old `infoPanelSections` config** → correctly maps to new `show*` booleans
+11. **Narrow terminal (< 100px)** → single-column layout respects all show/hide flags

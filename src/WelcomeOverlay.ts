@@ -42,15 +42,18 @@ export class WelcomeOverlay implements Component {
 	private done: () => void;
 	private tui: { requestRender(): void } | null = null;
 	private infoData: InfoPanelData;
+	private bannerLines: string[];
 
 	constructor(
 		config: WelcomeConfig,
 		done: () => void,
 		infoData?: InfoPanelData,
+		bannerLines?: string[],
 	) {
 		this.config = config;
 		this.countdown = config.countdown;
 		this.done = done;
+		this.bannerLines = bannerLines ?? BANNER_LINES;
 		this.infoData = infoData ?? {
 			modelName: config.modelName || "pi agent",
 			providerName: config.providerName || "pi",
@@ -93,7 +96,7 @@ export class WelcomeOverlay implements Component {
 		const totalFrames = getFrameCount(this.config.animationStyle);
 		this.frames = buildAnimationFrames(
 			this.config.animationStyle,
-			BANNER_LINES,
+			this.bannerLines,
 			totalFrames,
 		);
 	}
@@ -206,27 +209,35 @@ export class WelcomeOverlay implements Component {
 
 		// Build the "press any key" hint
 		let hintText = "";
-		if (this.config.countdown > 0) {
-			hintText = `Press any key to continue (${this.countdown}s)`;
-		} else if (this.config.countdown === -1) {
-			hintText = "Press any key to continue";
+		if (this.config.showCountdown) {
+			if (this.config.countdown > 0) {
+				hintText = `Press any key to continue (${this.countdown}s)`;
+			} else if (this.config.countdown === -1) {
+				hintText = "Press any key to continue";
+			}
 		}
 
 		const lines: string[] = [];
 
-		// Top border: ╭ + ─ + ╮
-		lines.push(
-			`${dimColor}${b.tl}${b.h.repeat(innerWidth)}${b.tr}${ansi.reset}`,
-		);
+		if (this.config.showBorder) {
+			// Top border: ╭ + ─ + ╮
+			lines.push(
+				`${dimColor}${b.tl}${b.h.repeat(innerWidth)}${b.tr}${ansi.reset}`,
+			);
+		}
 
 		// Content lines — pad each to innerWidth so the right border
 		// always appears at the correct position (handles short text,
 		// empty lines, and ANSI-colored content correctly via fitLine).
 		for (const line of contentLines) {
-			const padded = fitLine(line, innerWidth);
-			lines.push(
-				`${dimColor}${b.v}${ansi.reset}${padded}${dimColor}${b.v}${ansi.reset}`,
-			);
+			if (this.config.showBorder) {
+				const padded = fitLine(line, innerWidth);
+				lines.push(
+					`${dimColor}${b.v}${ansi.reset}${padded}${dimColor}${b.v}${ansi.reset}`,
+				);
+			} else {
+				lines.push(line);
+			}
 		}
 
 		// Hint line (above bottom border, centered to innerWidth)
@@ -234,19 +245,27 @@ export class WelcomeOverlay implements Component {
 			const hintVisLen = visibleWidth(hintText);
 			const hintLeftPad = Math.floor((innerWidth - hintVisLen) / 2);
 			const hintRightPad = innerWidth - hintVisLen - hintLeftPad;
-			lines.push(
-				`${dimColor}${b.v}${ansi.reset}` +
-					" ".repeat(hintLeftPad) +
-					`${dimColor}${hintText}${ansi.reset}` +
-					" ".repeat(hintRightPad) +
-					`${dimColor}${b.v}${ansi.reset}`,
-			);
+			if (this.config.showBorder) {
+				lines.push(
+					`${dimColor}${b.v}${ansi.reset}` +
+						" ".repeat(hintLeftPad) +
+						`${dimColor}${hintText}${ansi.reset}` +
+						" ".repeat(hintRightPad) +
+						`${dimColor}${b.v}${ansi.reset}`,
+				);
+			} else {
+				lines.push(
+					" ".repeat(hintLeftPad) + `${dimColor}${hintText}${ansi.reset}`,
+				);
+			}
 		}
 
-		// Full bottom border: ╰ + ─ + ╯
-		lines.push(
-			`${dimColor}${b.bl}${b.h.repeat(innerWidth)}${b.br}${ansi.reset}`,
-		);
+		if (this.config.showBorder) {
+			// Full bottom border: ╰ + ─ + ╯
+			lines.push(
+				`${dimColor}${b.bl}${b.h.repeat(innerWidth)}${b.br}${ansi.reset}`,
+			);
+		}
 
 		return lines;
 	}
@@ -284,35 +303,50 @@ export class WelcomeOverlay implements Component {
 		const colorMap = buildAnimationColorMap(this.config.animationColor);
 
 		// Padding top
-		for (let i = 0; i < this.config.paddingTop; i++) {
-			lines.push("");
+		if (this.config.showPadding) {
+			for (let i = 0; i < this.config.paddingTop; i++) {
+				lines.push("");
+			}
 		}
 
 		// Animated banner - center each line to colWidth and pad to full width
-		const frame = this.frames[this.frameIndex] ?? this.frames[0] ?? [];
-		for (const rawLine of frame) {
-			const resolved = resolveColorMarkers(rawLine, colorMap);
-			const colorized = this.applyAnimationColor(resolved);
-			const centered = centerPadLine(colorized, colWidth);
-			lines.push(centered);
+		if (this.config.showBanner) {
+			const frame = this.frames[this.frameIndex] ?? this.frames[0] ?? [];
+			for (const rawLine of frame) {
+				const resolved = resolveColorMarkers(rawLine, colorMap);
+				const colorized = this.applyAnimationColor(resolved);
+				const centered = centerPadLine(colorized, colWidth);
+				lines.push(centered);
+			}
 		}
 
 		// Padding between banner and main text
-		lines.push("");
+		if (
+			this.config.showBanner &&
+			(this.config.showMainText || this.config.showUrl)
+		) {
+			lines.push("");
+		}
 
 		// Main text - centered and padded to full width
-		const mainTextColor = colorToAnsi(this.config.fgColor);
-		const mainTextStyled = mainTextColor + this.config.mainText + ansi.reset;
-		lines.push(centerPadLine(mainTextStyled, colWidth));
+		if (this.config.showMainText) {
+			const mainTextColor = colorToAnsi(this.config.fgColor);
+			const mainTextStyled = mainTextColor + this.config.mainText + ansi.reset;
+			lines.push(centerPadLine(mainTextStyled, colWidth));
+		}
 
 		// URL - centered and padded to full width
-		const urlColor = colorToAnsi(this.config.urlColor);
-		const urlStyled = urlColor + this.config.url + ansi.reset;
-		lines.push(centerPadLine(urlStyled, colWidth));
+		if (this.config.showUrl) {
+			const urlColor = colorToAnsi(this.config.urlColor);
+			const urlStyled = urlColor + this.config.url + ansi.reset;
+			lines.push(centerPadLine(urlStyled, colWidth));
+		}
 
 		// Padding bottom
-		for (let i = 0; i < this.config.paddingBottom; i++) {
-			lines.push("");
+		if (this.config.showPadding) {
+			for (let i = 0; i < this.config.paddingBottom; i++) {
+				lines.push("");
+			}
 		}
 
 		return lines;
@@ -320,7 +354,6 @@ export class WelcomeOverlay implements Component {
 
 	private buildInfoPanelContent(colWidth: number): string[] {
 		const lines: string[] = [];
-		const sections = this.config.infoPanelSections;
 		const dimColor = colorToAnsi("overlay1");
 		const accentColor = colorToAnsi(this.config.accentColor);
 		const greenColor = colorToAnsi("green");
@@ -331,7 +364,7 @@ export class WelcomeOverlay implements Component {
 			indent + dimColor + "─".repeat(Math.max(1, colWidth - 2)) + ansi.reset;
 
 		// Version section
-		if (sections.includes("version")) {
+		if (this.config.showVersion) {
 			if (lines.length > 0) lines.push(separator);
 			const versionStr = this.infoData.piVersion;
 			lines.push(
@@ -359,7 +392,7 @@ export class WelcomeOverlay implements Component {
 		}
 
 		// Model section
-		if (sections.includes("model") && this.infoData.modelName) {
+		if (this.config.showModel && this.infoData.modelName) {
 			if (lines.length > 0) lines.push(separator);
 			lines.push(indent + bold(accentColor, "Model"));
 			lines.push(indent + textColor + this.infoData.modelName + ansi.reset);
@@ -367,7 +400,7 @@ export class WelcomeOverlay implements Component {
 		}
 
 		// Tips section
-		if (sections.includes("tips")) {
+		if (this.config.showTips) {
 			if (lines.length > 0) lines.push(separator);
 			lines.push(indent + bold(accentColor, "Tips"));
 			lines.push(
@@ -388,7 +421,7 @@ export class WelcomeOverlay implements Component {
 		}
 
 		// Loaded counts section
-		if (sections.includes("loaded")) {
+		if (this.config.showLoaded) {
 			const counts = this.infoData.loadedCounts;
 			const total =
 				counts.contextFiles +
@@ -453,7 +486,7 @@ export class WelcomeOverlay implements Component {
 		}
 
 		// Resources section (detailed listings)
-		if (sections.includes("resources")) {
+		if (this.config.showResources) {
 			const names = this.infoData.resourceNames;
 			const hasAny =
 				names.skills.length > 0 ||
@@ -553,10 +586,7 @@ export class WelcomeOverlay implements Component {
 		}
 
 		// Recent sessions section
-		if (
-			sections.includes("sessions") &&
-			this.infoData.recentSessions.length > 0
-		) {
+		if (this.config.showSessions && this.infoData.recentSessions.length > 0) {
 			if (lines.length > 0) lines.push(separator);
 			lines.push(indent + bold(accentColor, "Recent"));
 			for (const session of this.infoData.recentSessions.slice(0, 3)) {
@@ -588,46 +618,65 @@ export class WelcomeOverlay implements Component {
 		const dimColor = colorToAnsi("overlay0");
 
 		// Padding top
-		for (let i = 0; i < this.config.paddingTop; i++) {
-			lines.push(" ".repeat(innerWidth));
+		if (this.config.showPadding) {
+			for (let i = 0; i < this.config.paddingTop; i++) {
+				lines.push(" ".repeat(innerWidth));
+			}
 		}
 
 		// Animated banner
-		const frame = this.frames[this.frameIndex] ?? this.frames[0] ?? [];
-		for (const rawLine of frame) {
-			const resolved = resolveColorMarkers(rawLine, colorMap);
-			const colorized = this.applyAnimationColor(resolved);
-			lines.push(centerPadLine(colorized, innerWidth));
+		if (this.config.showBanner) {
+			const frame = this.frames[this.frameIndex] ?? this.frames[0] ?? [];
+			for (const rawLine of frame) {
+				const resolved = resolveColorMarkers(rawLine, colorMap);
+				const colorized = this.applyAnimationColor(resolved);
+				lines.push(centerPadLine(colorized, innerWidth));
+			}
 		}
 
-		// Spacer
-		lines.push(" ".repeat(innerWidth));
+		// Spacer between banner and text
+		if (
+			this.config.showBanner &&
+			(this.config.showMainText || this.config.showUrl)
+		) {
+			lines.push(" ".repeat(innerWidth));
+		}
 
-		// Main text + URL
-		const mainTextColor = colorToAnsi(this.config.fgColor);
-		lines.push(
-			centerPadLine(
-				mainTextColor + this.config.mainText + ansi.reset,
-				innerWidth,
-			),
-		);
-		const urlColor = colorToAnsi(this.config.urlColor);
-		lines.push(
-			centerPadLine(urlColor + this.config.url + ansi.reset, innerWidth),
-		);
+		// Main text
+		if (this.config.showMainText) {
+			const mainTextColor = colorToAnsi(this.config.fgColor);
+			lines.push(
+				centerPadLine(
+					mainTextColor + this.config.mainText + ansi.reset,
+					innerWidth,
+				),
+			);
+		}
 
-		// Separator
-		lines.push("");
-		lines.push(dimColor + "─".repeat(innerWidth) + ansi.reset);
-		lines.push("");
+		// URL
+		if (this.config.showUrl) {
+			const urlColor = colorToAnsi(this.config.urlColor);
+			lines.push(
+				centerPadLine(urlColor + this.config.url + ansi.reset, innerWidth),
+			);
+		}
 
-		// Info panel (compact)
-		const infoLines = this.buildInfoPanelContent(innerWidth);
-		lines.push(...infoLines);
+		// Separator + Info panel (only if info panel has content to show)
+		if (this.config.showInfoPanel) {
+			lines.push("");
+			lines.push(dimColor + "─".repeat(innerWidth) + ansi.reset);
+			lines.push("");
+
+			// Info panel (compact)
+			const infoLines = this.buildInfoPanelContent(innerWidth);
+			lines.push(...infoLines);
+		}
 
 		// Padding bottom
-		for (let i = 0; i < this.config.paddingBottom; i++) {
-			lines.push(" ".repeat(innerWidth));
+		if (this.config.showPadding) {
+			for (let i = 0; i < this.config.paddingBottom; i++) {
+				lines.push(" ".repeat(innerWidth));
+			}
 		}
 
 		return lines;

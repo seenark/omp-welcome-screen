@@ -64,11 +64,38 @@ export interface WelcomeConfig {
 	/** Overlay box width */
 	overlayWidth: number;
 
+	// ─── Visibility Toggles ──────────────────────────────────────────────────
+
+	/** Show ASCII art banner */
+	showBanner: boolean;
+	/** Show main text line */
+	showMainText: boolean;
+	/** Show URL line */
+	showUrl: boolean;
+	/** Show countdown / "press any key" hint */
+	showCountdown: boolean;
+	/** Show top/bottom padding */
+	showPadding: boolean;
+	/** Show border box around overlay */
+	showBorder: boolean;
+
 	// ─── Info Panel Options ────────────────────────────────────────────────────
 
-	/** Show info panel on the right side (like pi-powerline-footer) */
+	/** Show info panel on the right side */
 	showInfoPanel: boolean;
-	/** Which sections to show in the info panel */
+	/** Show version + keybindings section in info panel */
+	showVersion: boolean;
+	/** Show model name + provider section in info panel */
+	showModel: boolean;
+	/** Show keyboard tips section in info panel */
+	showTips: boolean;
+	/** Show loaded counts section in info panel */
+	showLoaded: boolean;
+	/** Show detailed resource listings in info panel */
+	showResources: boolean;
+	/** Show recent sessions section in info panel */
+	showSessions: boolean;
+	/** Which sections to show in the info panel (deprecated — use individual show* booleans) */
 	infoPanelSections: InfoPanelSection[];
 	/** Model name override (empty = auto-detect from pi context) */
 	modelName: string;
@@ -76,6 +103,11 @@ export interface WelcomeConfig {
 	providerName: string;
 	/** Pi logo character (use empty string to disable) */
 	logoChar: string;
+
+	// ─── Banner File ─────────────────────────────────────────────────────────
+
+	/** Path to a custom banner text file (empty = use built-in banner) */
+	bannerFile: string;
 }
 
 // Deep partial for config merging

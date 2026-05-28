@@ -19,7 +19,7 @@
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { loadConfig } from "./config.js";
+import { loadConfig, loadBannerFile } from "./config.js";
 import { WelcomeOverlay } from "./WelcomeOverlay.js";
 import { getInfoPanelData } from "./info-panel.js";
 
@@ -68,7 +68,13 @@ export default function (pi: ExtensionAPI) {
 				.custom(
 					(tui: any, _theme: any, _keybindings: any, done: () => void) => {
 						// Create the overlay component with info data
-						activeOverlay = new WelcomeOverlay(config, done, infoData);
+						const bannerLines = loadBannerFile(config);
+						activeOverlay = new WelcomeOverlay(
+							config,
+							done,
+							infoData,
+							bannerLines ?? undefined,
+						);
 						activeOverlay.startAnimation(tui);
 						return activeOverlay;
 					},

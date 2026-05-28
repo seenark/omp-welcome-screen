@@ -30,8 +30,22 @@ export const DEFAULT_CONFIG: WelcomeConfig = {
 	// ─── Debug Mode ──────────────────────────────────────────────────────────────────
 	debug: false, // When true, overlay stays visible forever (never auto-dismisses)
 
+	// ─── Visibility Toggles (all default true) ─────────────────────────────────
+	showBanner: true,
+	showMainText: true,
+	showUrl: true,
+	showCountdown: true,
+	showPadding: true,
+	showBorder: true,
+
 	// ─── Info Panel Options ─────────────────────────────────────────────────────
 	showInfoPanel: true,
+	showVersion: true,
+	showModel: true,
+	showTips: true,
+	showLoaded: true,
+	showResources: true,
+	showSessions: true,
 	infoPanelSections: [
 		"version",
 		"model",
@@ -43,6 +57,9 @@ export const DEFAULT_CONFIG: WelcomeConfig = {
 	modelName: "",
 	providerName: "",
 	logoChar: "π",
+
+	// ─── Banner File ──────────────────────────────────────────────────────────
+	bannerFile: "",
 };
 
 // ─── Config Loading ────────────────────────────────────────────────────────────
@@ -51,20 +68,41 @@ export const DEFAULT_CONFIG: WelcomeConfig = {
  * Load user config from file, merged on top of built-in defaults.
  * Priority order:
  * 1. Built-in defaults (lowest priority)
- * 2. JSON config file: ~/.pi/welcome-screen.config.json
- *    or ~/.pi/config/welcome-screen.json
- *    or ./welcome-screen.config.json
+ * 2. JSON config file: ~/.pi/agent/pi-welcome-screen/settings.json
+ *    or ~/.pi/welcome-screen.config.json (legacy)
+ *    or ./welcome-screen.config.json (project root)
  */
 export function loadConfig(): WelcomeConfig {
 	const userConfig = loadConfigFile();
-	return { ...DEFAULT_CONFIG, ...userConfig };
+	const merged = { ...DEFAULT_CONFIG, ...userConfig };
+
+	// Backward-compat: map deprecated infoPanelSections array to individual show* booleans.
+	// Only applies when the user explicitly set infoPanelSections (i.e. it differs from default)
+	// AND the individual show* booleans were NOT explicitly set.
+	if (Array.isArray(userConfig.infoPanelSections)) {
+		const sections = new Set(userConfig.infoPanelSections);
+		if (userConfig.showVersion === undefined)
+			merged.showVersion = sections.has("version");
+		if (userConfig.showModel === undefined)
+			merged.showModel = sections.has("model");
+		if (userConfig.showTips === undefined)
+			merged.showTips = sections.has("tips");
+		if (userConfig.showLoaded === undefined)
+			merged.showLoaded = sections.has("loaded");
+		if (userConfig.showResources === undefined)
+			merged.showResources = sections.has("resources");
+		if (userConfig.showSessions === undefined)
+			merged.showSessions = sections.has("sessions");
+	}
+
+	return merged;
 }
 
 function loadConfigFile(): PartialConfig {
 	const homeDir = process.env.HOME ?? process.env.USERPROFILE ?? "";
 	const configPaths = [
-		join(homeDir, ".pi", "welcome-screen.config.json"),
-		join(homeDir, ".pi", "config", "welcome-screen.json"),
+		join(homeDir, ".pi", "agent", "pi-welcome-screen", "settings.json"),
+		join(homeDir, ".pi", "welcome-screen.config.json"), // legacy
 		join(process.cwd(), "welcome-screen.config.json"),
 	];
 
@@ -80,6 +118,54 @@ function loadConfigFile(): PartialConfig {
 	}
 
 	return {};
+}
+
+// ─── Banner File Loading ────────────────────────────────────────────────────────
+
+/**
+ * Load custom banner lines from a `.txt` file.
+ *
+ * Search order (first found wins):
+ * 1. Explicit path from `config.bannerFile`
+ * 2. ~/.pi/agent/pi-welcome-screen/banner.txt
+ * 3. ./welcome-screen.banner.txt (project root)
+ *
+ * Returns `null` if no file found (caller should fall back to built-in BANNER_LINES).
+ */
+export function loadBannerFile(config: WelcomeConfig): string[] | null {
+	const homeDir = process.env.HOME ?? process.env.USERPROFILE ?? "";
+
+	const searchPaths = config.bannerFile
+		? [config.bannerFile]
+		: [
+				join(homeDir, ".pi", "agent", "pi-welcome-screen", "banner.txt"),
+				join(process.cwd(), "welcome-screen.banner.txt"),
+			];
+
+	for (const filePath of searchPaths) {
+		if (!filePath) continue;
+		if (!existsSync(filePath)) continue;
+
+		try {
+			const raw = readFileSync(filePath, "utf-8");
+			let lines = raw.split("\n").map((line) => line.replace(/\r$/, "")); // strip trailing CR
+
+			// Strip leading/trailing blank lines
+			while (lines.length > 0 && lines[0].trim() === "") {
+				lines = lines.slice(1);
+			}
+			while (lines.length > 0 && lines[lines.length - 1].trim() === "") {
+				lines = lines.slice(0, -1);
+			}
+
+			if (lines.length === 0) return null;
+			return lines;
+		} catch {
+			// Silently skip unreadable files
+		}
+	}
+
+	return null;
 }
 
 // ─── Config Validation ─────────────────────────────────────────────────────────

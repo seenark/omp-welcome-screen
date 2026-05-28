@@ -54,12 +54,21 @@ export class WelcomeOverlay implements Component {
 		this.infoData = infoData ?? {
 			modelName: config.modelName || "pi agent",
 			providerName: config.providerName || "pi",
+			piVersion: "pi",
 			recentSessions: [],
 			loadedCounts: {
 				contextFiles: 0,
 				extensions: 0,
 				skills: 0,
 				promptTemplates: 0,
+				themes: 0,
+			},
+			resourceNames: {
+				skills: [],
+				extensions: [],
+				prompts: [],
+				themes: [],
+				contextFiles: [],
 			},
 		};
 		this.initFrames();
@@ -321,8 +330,37 @@ export class WelcomeOverlay implements Component {
 		const separator =
 			indent + dimColor + "─".repeat(Math.max(1, colWidth - 2)) + ansi.reset;
 
+		// Version section
+		if (sections.includes("version")) {
+			if (lines.length > 0) lines.push(separator);
+			const versionStr = this.infoData.piVersion;
+			lines.push(
+				indent +
+					bold(accentColor, "Pi") +
+					dimColor +
+					` ${versionStr}` +
+					ansi.reset,
+			);
+			lines.push(
+				indent +
+					dimColor +
+					"esc" +
+					ansi.reset +
+					" interrupt" +
+					dimColor +
+					"  ctrl+c/d" +
+					ansi.reset +
+					" clear/exit" +
+					dimColor +
+					"  ctrl+o" +
+					ansi.reset +
+					" more",
+			);
+		}
+
 		// Model section
 		if (sections.includes("model") && this.infoData.modelName) {
+			if (lines.length > 0) lines.push(separator);
 			lines.push(indent + bold(accentColor, "Model"));
 			lines.push(indent + textColor + this.infoData.modelName + ansi.reset);
 			lines.push(indent + dimColor + this.infoData.providerName + ansi.reset);
@@ -356,7 +394,8 @@ export class WelcomeOverlay implements Component {
 				counts.contextFiles +
 				counts.extensions +
 				counts.skills +
-				counts.promptTemplates;
+				counts.promptTemplates +
+				counts.themes;
 			if (total > 0) {
 				if (lines.length > 0) lines.push(separator);
 				lines.push(indent + bold(accentColor, "Loaded"));
@@ -399,7 +438,117 @@ export class WelcomeOverlay implements Component {
 							" tmpl" +
 							ansi.reset,
 					);
+				if (counts.themes > 0)
+					parts.push(
+						greenColor +
+							`${counts.themes}` +
+							ansi.reset +
+							textColor +
+							" theme" +
+							(counts.themes !== 1 ? "s" : "") +
+							ansi.reset,
+					);
 				lines.push(indent + parts.join(dimColor + " · " + ansi.reset));
+			}
+		}
+
+		// Resources section (detailed listings)
+		if (sections.includes("resources")) {
+			const names = this.infoData.resourceNames;
+			const hasAny =
+				names.skills.length > 0 ||
+				names.extensions.length > 0 ||
+				names.prompts.length > 0 ||
+				names.themes.length > 0 ||
+				names.contextFiles.length > 0;
+			if (hasAny) {
+				if (lines.length > 0) lines.push(separator);
+				lines.push(indent + bold(accentColor, "Resources"));
+
+				const maxItemsPerCategory = 6;
+				const maxNameLen = colWidth - 6;
+
+				const formatName = (name: string): string => {
+					if (name.length > maxNameLen)
+						return name.slice(0, maxNameLen - 1) + "…";
+					return name;
+				};
+
+				if (names.contextFiles.length > 0) {
+					const items = names.contextFiles
+						.slice(0, maxItemsPerCategory)
+						.map(formatName)
+						.join(dimColor + ", " + ansi.reset);
+					lines.push(
+						indent +
+							dimColor +
+							"ctx: " +
+							ansi.reset +
+							textColor +
+							items +
+							ansi.reset,
+					);
+				}
+				if (names.extensions.length > 0) {
+					const items = names.extensions
+						.slice(0, maxItemsPerCategory)
+						.map(formatName)
+						.join(dimColor + ", " + ansi.reset);
+					lines.push(
+						indent +
+							dimColor +
+							"ext: " +
+							ansi.reset +
+							textColor +
+							items +
+							ansi.reset,
+					);
+				}
+				if (names.skills.length > 0) {
+					const items = names.skills
+						.slice(0, maxItemsPerCategory)
+						.map(formatName)
+						.join(dimColor + ", " + ansi.reset);
+					lines.push(
+						indent +
+							dimColor +
+							"skill: " +
+							ansi.reset +
+							textColor +
+							items +
+							ansi.reset,
+					);
+				}
+				if (names.prompts.length > 0) {
+					const items = names.prompts
+						.slice(0, maxItemsPerCategory)
+						.map(formatName)
+						.join(dimColor + ", " + ansi.reset);
+					lines.push(
+						indent +
+							dimColor +
+							"prompt: " +
+							ansi.reset +
+							textColor +
+							items +
+							ansi.reset,
+					);
+				}
+				if (names.themes.length > 0) {
+					const items = names.themes
+						.slice(0, maxItemsPerCategory)
+						.map(formatName)
+						.join(dimColor + ", " + ansi.reset);
+					lines.push(
+						indent +
+							dimColor +
+							"theme: " +
+							ansi.reset +
+							textColor +
+							items +
+							ansi.reset,
+					);
+				}
 			}
 		}
 

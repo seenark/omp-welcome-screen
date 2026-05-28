@@ -7,7 +7,14 @@ import { readdirSync, existsSync, statSync, readFileSync } from "node:fs";
 import { join, basename } from "node:path";
 import { homedir as osHomedir } from "node:os";
 
-import type { LoadedCounts, RecentSession, InfoPanelData } from "./types.js";
+import { execSync } from "node:child_process";
+
+import type {
+	LoadedCounts,
+	RecentSession,
+	InfoPanelData,
+	ResourceNames,
+} from "./types.js";
 
 // ─── Logging ──────────────────────────────────────────────────────────────────
 
@@ -24,12 +31,15 @@ function logError(scope: string, error: unknown): void {
 	console.debug(`[pi-welcome-screen] ${scope}:`, error);
 }
 
-// ─── Loaded Counts Discovery ───────────────────────────────────────────────────
+// ─── Loaded Counts & Resource Names Discovery ───────────────────────────────────
 
 /**
- * Discover loaded counts by scanning filesystem.
+ * Discover loaded counts AND resource names by scanning filesystem.
  */
-export function discoverLoadedCounts(): LoadedCounts {
+export function discoverLoadedResources(): {
+	counts: LoadedCounts;
+	names: ResourceNames;
+} {
 	const homeDir = process.env.HOME || process.env.USERPROFILE || osHomedir();
 	const cwd = process.cwd();
 
@@ -37,6 +47,13 @@ export function discoverLoadedCounts(): LoadedCounts {
 	let extensions = 0;
 	let skills = 0;
 	let promptTemplates = 0;
+	let themes = 0;
+
+	const contextFileNames: string[] = [];
+	const extensionNames: string[] = [];
+	const skillNames: string[] = [];
+	const promptNames: string[] = [];
+	const themeNames: string[] = [];
 
 	// Scan for context files (AGENTS.md)
 	const agentsMdPaths = [
@@ -48,7 +65,10 @@ export function discoverLoadedCounts(): LoadedCounts {
 	];
 
 	for (const path of agentsMdPaths) {
-		if (existsSync(path)) contextFiles++;
+		if (existsSync(path)) {
+			contextFiles++;
+			contextFileNames.push(basename(path));
+		}
 	}
 
 	// Count extensions from settings.json
@@ -106,6 +126,22 @@ export function discoverLoadedCounts(): LoadedCounts {
 
 					countedExtensions.add(name);
 					extensions++;
+					extensionNames.push(name);
+				}
+			}
+
+			// Also scan settings.json for extensions array
+			const extArr = (settings as { extensions?: unknown }).extensions;
+			if (Array.isArray(extArr)) {
+				for (const ext of extArr) {
+					if (typeof ext === "string") {
+						const name = basename(ext).replace(/\.(ts|js)$/, "");
+						if (!countedExtensions.has(name)) {
+							countedExtensions.add(name);
+							extensions++;
+							extensionNames.push(name);
+						}
+					}
 				}
 			}
 		} catch (error) {
@@ -131,6 +167,7 @@ export function discoverLoadedCounts(): LoadedCounts {
 							if (!countedExtensions.has(entry)) {
 								countedExtensions.add(entry);
 								extensions++;
+								extensionNames.push(entry);
 							}
 						}
 					} else if (
@@ -142,6 +179,7 @@ export function discoverLoadedCounts(): LoadedCounts {
 						if (!countedExtensions.has(name)) {
 							countedExtensions.add(name);
 							extensions++;
+							extensionNames.push(name);
 						}
 					}
 				} catch (error) {
@@ -156,6 +194,7 @@ export function discoverLoadedCounts(): LoadedCounts {
 	// Scan skills directories
 	const skillDirs = [
 		join(homeDir, ".pi", "agent", "skills"),
+		join(homeDir, ".agents", "skills"),
 		join(cwd, ".pi", "skills"),
 		join(cwd, "skills"),
 	];
@@ -174,6 +213,7 @@ export function discoverLoadedCounts(): LoadedCounts {
 							if (!countedSkills.has(entry)) {
 								countedSkills.add(entry);
 								skills++;
+								skillNames.push(entry);
 							}
 						}
 					}
@@ -211,6 +251,7 @@ export function discoverLoadedCounts(): LoadedCounts {
 						if (!countedTemplates.has(name)) {
 							countedTemplates.add(name);
 							promptTemplates++;
+							promptNames.push("/" + name);
 						}
 					}
 				} catch (error) {
@@ -226,7 +267,59 @@ export function discoverLoadedCounts(): LoadedCounts {
 		countTemplatesInDir(dir);
 	}
 
-	return { contextFiles, extensions, skills, promptTemplates };
+	// Scan themes
+	const themeDirs = [
+		join(homeDir, ".pi", "agent", "themes"),
+		join(cwd, ".pi", "themes"),
+	];
+
+	const countedThemes = new Set<string>();
+
+	for (const dir of themeDirs) {
+		if (!existsSync(dir)) continue;
+		try {
+			const entries = readdirSync(dir);
+			for (const entry of entries) {
+				const entryPath = join(dir, entry);
+				try {
+					if (
+						entry.endsWith(".json") ||
+						entry.endsWith(".yml") ||
+						entry.endsWith(".yaml")
+					) {
+						const name = entry.replace(/\.(json|yml|yaml)$/, "");
+						if (!countedThemes.has(name)) {
+							countedThemes.add(name);
+							themes++;
+							themeNames.push(name);
+						}
+					}
+				} catch (error) {
+					logError(`Failed to inspect theme entry ${entryPath}`, error);
+				}
+			}
+		} catch (error) {
+			logError(`Failed to scan themes dir ${dir}`, error);
+		}
+	}
+
+	return {
+		counts: { contextFiles, extensions, skills, promptTemplates, themes },
+		names: {
+			skills: skillNames,
+			extensions: extensionNames,
+			prompts: promptNames,
+			themes: themeNames,
+			contextFiles: contextFileNames,
+		},
+	};
+}
+
+/**
+ * Discover loaded counts by scanning filesystem.
+ */
+export function discoverLoadedCounts(): LoadedCounts {
+	return discoverLoadedResources().counts;
 }
 
 // ─── Recent Sessions Discovery ────────────────────────────────────────────────
@@ -308,17 +401,44 @@ function formatTimeAgo(ms: number): string {
 	return "just now";
 }
 
+// ─── Pi Version Discovery ───────────────────────────────────────────────────────
+
+/**
+ * Detect Pi version from CLI.
+ */
+export function discoverPiVersion(): string {
+	try {
+		const output = execSync("pi --version", {
+			encoding: "utf-8",
+			timeout: 3000,
+		}).trim();
+		if (output) return output.split("\n")[0]?.trim() ?? "pi";
+	} catch {
+		// pi binary not found or timeout
+	}
+	return "pi";
+}
+
 // ─── Default Info Panel Data ───────────────────────────────────────────────────
 
 const defaultInfoPanelData: InfoPanelData = {
 	modelName: "pi agent",
 	providerName: "pi",
+	piVersion: "pi",
 	recentSessions: [],
 	loadedCounts: {
 		contextFiles: 0,
 		extensions: 0,
 		skills: 0,
 		promptTemplates: 0,
+		themes: 0,
+	},
+	resourceNames: {
+		skills: [],
+		extensions: [],
+		prompts: [],
+		themes: [],
+		contextFiles: [],
 	},
 };
 
@@ -329,10 +449,13 @@ export function getInfoPanelData(
 	modelName: string,
 	providerName: string,
 ): InfoPanelData {
+	const { counts, names } = discoverLoadedResources();
 	return {
 		modelName: modelName || defaultInfoPanelData.modelName,
 		providerName: providerName || defaultInfoPanelData.providerName,
+		piVersion: discoverPiVersion(),
 		recentSessions: getRecentSessions(3),
-		loadedCounts: discoverLoadedCounts(),
+		loadedCounts: counts,
+		resourceNames: names,
 	};
 }

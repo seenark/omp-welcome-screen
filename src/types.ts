@@ -13,9 +13,11 @@ export type BorderStyle = "rounded" | "square" | "double" | "minimal";
 
 /** Info panel sections that can be displayed */
 export type InfoPanelSection =
+	| "version" // Pi version and keybindings
 	| "model" // Model name and provider
 	| "tips" // Keyboard tips
 	| "loaded" // Loaded counts (extensions, skills, context files)
+	| "resources" // Detailed resource listings (skills, extensions, prompts, themes)
 	| "sessions"; // Recent sessions
 
 export interface WelcomeConfig {
@@ -91,11 +93,22 @@ export interface LoadedCounts {
 	extensions: number;
 	skills: number;
 	promptTemplates: number;
+	themes: number;
+}
+
+export interface ResourceNames {
+	skills: string[];
+	extensions: string[];
+	prompts: string[];
+	themes: string[];
+	contextFiles: string[];
 }
 
 export interface InfoPanelData {
 	modelName: string;
 	providerName: string;
+	piVersion: string;
 	recentSessions: RecentSession[];
 	loadedCounts: LoadedCounts;
+	resourceNames: ResourceNames;
 }

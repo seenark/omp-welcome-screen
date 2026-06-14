@@ -65,7 +65,6 @@ export class WelcomeOverlay implements Component {
 			loadedCounts: {
 				contextFiles: 0,
 				extensions: 0,
-				skills: 0,
 				promptTemplates: 0,
 				themes: 0,
 			},
@@ -504,7 +503,6 @@ export class WelcomeOverlay implements Component {
 			const total =
 				counts.contextFiles +
 				counts.extensions +
-				counts.skills +
 				counts.promptTemplates +
 				counts.themes;
 			if (total > 0) {
@@ -528,16 +526,6 @@ export class WelcomeOverlay implements Component {
 							ansi.reset +
 							textColor +
 							" ext" +
-							ansi.reset,
-					);
-				if (counts.skills > 0)
-					parts.push(
-						greenColor +
-							`${counts.skills}` +
-							ansi.reset +
-							textColor +
-							" skill" +
-							(counts.skills !== 1 ? "s" : "") +
 							ansi.reset,
 					);
 				if (counts.promptTemplates > 0)

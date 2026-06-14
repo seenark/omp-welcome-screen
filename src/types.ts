@@ -16,7 +16,7 @@ export type InfoPanelSection =
 	| "version" // Pi version and keybindings
 	| "model" // Model name and provider
 	| "tips" // Keyboard tips
-	| "loaded" // Loaded counts (extensions, skills, context files)
+	| "loaded" // Loaded counts (extensions, context files, prompt templates, themes)
 	| "resources" // Detailed resource listings (skills, extensions, prompts, themes)
 	| "sessions"; // Recent sessions
 
@@ -128,7 +128,6 @@ export interface RecentSession {
 export interface LoadedCounts {
 	contextFiles: number;
 	extensions: number;
-	skills: number;
 	promptTemplates: number;
 	themes: number;
 }

@@ -1,8 +1,7 @@
 /**
  * Info panel data discovery for pi-welcome-screen.
- * Scans filesystem to discover loaded extensions, skills, context files, and sessions.
+ * Scans filesystem to discover loaded extensions, context files, prompt templates, and sessions.
  */
-
 import { readdirSync, existsSync, statSync, readFileSync } from "node:fs";
 import { join, basename } from "node:path";
 import { homedir as osHomedir } from "node:os";
@@ -45,7 +44,6 @@ export function discoverLoadedResources(): {
 
 	let contextFiles = 0;
 	let extensions = 0;
-	let skills = 0;
 	let promptTemplates = 0;
 	let themes = 0;
 
@@ -212,7 +210,6 @@ export function discoverLoadedResources(): {
 						if (existsSync(join(entryPath, "SKILL.md"))) {
 							if (!countedSkills.has(entry)) {
 								countedSkills.add(entry);
-								skills++;
 								skillNames.push(entry);
 							}
 						}
@@ -304,7 +301,7 @@ export function discoverLoadedResources(): {
 	}
 
 	return {
-		counts: { contextFiles, extensions, skills, promptTemplates, themes },
+		counts: { contextFiles, extensions, promptTemplates, themes },
 		names: {
 			skills: skillNames,
 			extensions: extensionNames,
@@ -429,7 +426,6 @@ const defaultInfoPanelData: InfoPanelData = {
 	loadedCounts: {
 		contextFiles: 0,
 		extensions: 0,
-		skills: 0,
 		promptTemplates: 0,
 		themes: 0,
 	},

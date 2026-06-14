@@ -48,7 +48,7 @@ When `showInfoPanel: true` (default) and terminal width >= 100, the overlay disp
 - **Right column:** Info panel with:
   - Model name and provider
   - Keyboard tips
-  - Loaded counts (extensions, skills, context files, prompt templates)
+  - Loaded counts (extensions, context files, prompt templates)
   - Recent sessions
 
 ### Config System

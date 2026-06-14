@@ -1,6 +1,6 @@
 {
     "name": "@codesook/pi-welcome-screen",
-    "version": "0.3.4",
+    "version": "0.3.5",
     "description": "Customizable animated ASCII art welcome overlay for pi coding agent — shows on session start with countdown and auto-dismiss",
     "type": "module",
     "files": [

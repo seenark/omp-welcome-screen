@@ -82,6 +82,7 @@ test("discoverLoadedCounts is not tied to skill directories", () => {
 			contextFiles: 1,
 			extensions: 1,
 			promptTemplates: 1,
+			themes: 0,
 		});
 		expect(debugSpy).not.toHaveBeenCalled();
 	} finally {

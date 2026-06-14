@@ -35,7 +35,7 @@ function logError(scope: string, error: unknown): void {
 /**
  * Discover loaded counts AND resource names by scanning filesystem.
  */
-export function discoverLoadedResources(): {
+export function discoverLoadedResources(includeSkillNames: boolean = true): {
 	counts: LoadedCounts;
 	names: ResourceNames;
 } {
@@ -189,41 +189,41 @@ export function discoverLoadedResources(): {
 		}
 	}
 
-	// Scan skills directories
-	const skillDirs = [
-		join(homeDir, ".pi", "agent", "skills"),
-		join(homeDir, ".agents", "skills"),
-		join(cwd, ".pi", "skills"),
-		join(cwd, "skills"),
-	];
+	if (includeSkillNames) {
+		// Scan skills directories
+		const skillDirs = [
+			join(homeDir, ".pi", "agent", "skills"),
+			join(homeDir, ".agents", "skills"),
+			join(cwd, ".pi", "skills"),
+			join(cwd, "skills"),
+		];
 
-	const countedSkills = new Set<string>();
+		const countedSkills = new Set<string>();
 
-	for (const dir of skillDirs) {
-		if (!existsSync(dir)) continue;
-		try {
-			const entries = readdirSync(dir);
-			for (const entry of entries) {
-				const entryPath = join(dir, entry);
-				try {
-					if (statSync(entryPath).isDirectory()) {
-						if (existsSync(join(entryPath, "SKILL.md"))) {
-							if (!countedSkills.has(entry)) {
-								countedSkills.add(entry);
-								skillNames.push(entry);
+		for (const dir of skillDirs) {
+			if (!existsSync(dir)) continue;
+			try {
+				const entries = readdirSync(dir);
+				for (const entry of entries) {
+					const entryPath = join(dir, entry);
+					try {
+						if (statSync(entryPath).isDirectory()) {
+							if (existsSync(join(entryPath, "SKILL.md"))) {
+								if (!countedSkills.has(entry)) {
+									countedSkills.add(entry);
+									skillNames.push(entry);
+								}
 							}
 						}
+					} catch (error) {
+						logError(`Failed to inspect skill entry ${entryPath}`, error);
 					}
-				} catch (error) {
-					logError(`Failed to inspect skill entry ${entryPath}`, error);
 				}
+			} catch (error) {
+				logError(`Failed to scan skills dir ${dir}`, error);
 			}
-		} catch (error) {
-			logError(`Failed to scan skills dir ${dir}`, error);
 		}
 	}
-
-	// Scan prompt templates
 	const templateDirs = [
 		join(homeDir, ".pi", "agent", "commands"),
 		join(homeDir, ".claude", "commands"),
@@ -316,7 +316,7 @@ export function discoverLoadedResources(): {
  * Discover loaded counts by scanning filesystem.
  */
 export function discoverLoadedCounts(): LoadedCounts {
-	return discoverLoadedResources().counts;
+	return discoverLoadedResources(false).counts;
 }
 
 // ─── Recent Sessions Discovery ────────────────────────────────────────────────

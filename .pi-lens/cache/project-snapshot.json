@@ -88,7 +88,7 @@
     "entryCount": 28
   },
   "startupScan": {
-    "cwd": "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen",
+    "cwd": "/Users/atiwatseenark/Documents/codesook/pi-welcome-screen",
     "scanRoot": "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen",
     "projectRoot": "/Volumes/HadesGodBlue/CodeSook/pi-welcome-screen",
     "canWarmCaches": true,
@@ -140,6 +140,17 @@
     },
     "detectedKinds": [
       "jsts"
+    ]
+  },
+  "conventions": {
+    "frameworks": [],
+    "testRunners": [],
+    "buildTools": [],
+    "agentDocs": [
+      {
+        "filePath": "AGENTS.md",
+        "lineCount": 119
+      }
     ]
   }
 }

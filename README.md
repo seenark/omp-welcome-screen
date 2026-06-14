@@ -163,8 +163,8 @@ The info panel appears on the right side when the terminal is ≥ 100 chars wide
 | `showVersion`       | boolean  | `true`                                                       | Show Pi version                                 |
 | `showModel`         | boolean  | `true`                                                       | Show model name & provider                      |
 | `showTips`          | boolean  | `true`                                                       | Show keyboard tips                              |
-| `showLoaded`        | boolean  | `true`                                                       | Show loaded counts (extensions, skills, etc.)   |
-| `showResources`     | boolean  | `true`                                                       | Show detailed resource listings                 |
+| `showLoaded`        | boolean  | `true`                                                       | Show loaded counts (context files, extensions, prompts, themes) |
+| `showResources`     | boolean  | `true`                                                       | Show detailed resource listings (context files, extensions, prompts, themes) |
 | `showSessions`      | boolean  | `true`                                                       | Show recent sessions                            |
 | `infoPanelSections` | string[] | `["version","model","tips","loaded","resources","sessions"]` | Section order                                   |
 | `modelName`         | string   | `""`                                                         | Override model name (auto-detected if empty)    |

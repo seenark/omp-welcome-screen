@@ -48,7 +48,7 @@ When `showInfoPanel: true` (default) and terminal width >= 100, the overlay disp
 - **Right column:** Info panel with:
   - Model name and provider
   - Keyboard tips
-  - Loaded counts (extensions, context files, prompt templates)
+  - Loaded counts (extensions, context files, prompt templates, themes)
   - Recent sessions
 
 ### Config System
@@ -97,7 +97,7 @@ No build, install, or compile steps needed.
 4. `src/animations.ts` — understand how frames are generated per style
 5. `src/renderer.ts` — understand ANSI color utilities
 6. `src/config.ts` — understand defaults, palette, and config loading
-7. `src/info-panel.ts` — understand how loaded counts and recent sessions are discovered
+7. `src/info-panel.ts` — understand how loaded counts, resource names, and recent sessions are discovered; it intentionally does not scan skill directories
 
 ## Common Tasks
 

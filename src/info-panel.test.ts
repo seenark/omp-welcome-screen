@@ -9,7 +9,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { discoverLoadedCounts } from "./info-panel.js";
+import { discoverLoadedCounts, discoverLoadedResources } from "./info-panel.js";
 
 const originalHome = process.env.HOME;
 const originalUserProfile = process.env.USERPROFILE;
@@ -83,6 +83,56 @@ test("discoverLoadedCounts is not tied to skill directories", () => {
 			extensions: 1,
 			promptTemplates: 1,
 			themes: 0,
+		});
+		expect(debugSpy).not.toHaveBeenCalled();
+	} finally {
+		debugSpy.mockRestore();
+	}
+});
+
+test("discoverLoadedResources is not tied to skill directories", () => {
+	const homeDir = process.env.HOME;
+	if (homeDir === undefined) throw new Error("HOME must be set by test setup");
+
+	const debugSpy = spyOn(console, "debug").mockImplementation(() => {});
+	try {
+		const skillsDir = join(homeDir, ".pi", "agent", "skills");
+		mkdirSync(skillsDir, { recursive: true });
+		symlinkSync(
+			join(tempRoot, "missing-skill-target"),
+			join(skillsDir, "broken-skill"),
+			"dir",
+		);
+
+		const extensionDir = join(
+			homeDir,
+			".pi",
+			"agent",
+			"extensions",
+			"demo-extension",
+		);
+		mkdirSync(extensionDir, { recursive: true });
+		writeFileSync(join(extensionDir, "package.json"), "{}\n");
+
+		writeFileSync(join(process.cwd(), "AGENTS.md"), "# Project\n");
+
+		const commandDir = join(process.cwd(), ".claude", "commands");
+		mkdirSync(commandDir, { recursive: true });
+		writeFileSync(join(commandDir, "plan.md"), "# Command\n");
+
+		expect(discoverLoadedResources()).toEqual({
+			counts: {
+				contextFiles: 1,
+				extensions: 1,
+				promptTemplates: 1,
+				themes: 0,
+			},
+			names: {
+				contextFiles: ["AGENTS.md"],
+				extensions: ["demo-extension"],
+				prompts: ["/plan"],
+				themes: [],
+			},
 		});
 		expect(debugSpy).not.toHaveBeenCalled();
 	} finally {

@@ -35,7 +35,7 @@ function logError(scope: string, error: unknown): void {
 /**
  * Discover loaded counts AND resource names by scanning filesystem.
  */
-export function discoverLoadedResources(includeSkillNames: boolean = true): {
+export function discoverLoadedResources(): {
 	counts: LoadedCounts;
 	names: ResourceNames;
 } {
@@ -49,7 +49,6 @@ export function discoverLoadedResources(includeSkillNames: boolean = true): {
 
 	const contextFileNames: string[] = [];
 	const extensionNames: string[] = [];
-	const skillNames: string[] = [];
 	const promptNames: string[] = [];
 	const themeNames: string[] = [];
 
@@ -189,41 +188,6 @@ export function discoverLoadedResources(includeSkillNames: boolean = true): {
 		}
 	}
 
-	if (includeSkillNames) {
-		// Scan skills directories
-		const skillDirs = [
-			join(homeDir, ".pi", "agent", "skills"),
-			join(homeDir, ".agents", "skills"),
-			join(cwd, ".pi", "skills"),
-			join(cwd, "skills"),
-		];
-
-		const countedSkills = new Set<string>();
-
-		for (const dir of skillDirs) {
-			if (!existsSync(dir)) continue;
-			try {
-				const entries = readdirSync(dir);
-				for (const entry of entries) {
-					const entryPath = join(dir, entry);
-					try {
-						if (statSync(entryPath).isDirectory()) {
-							if (existsSync(join(entryPath, "SKILL.md"))) {
-								if (!countedSkills.has(entry)) {
-									countedSkills.add(entry);
-									skillNames.push(entry);
-								}
-							}
-						}
-					} catch (error) {
-						logError(`Failed to inspect skill entry ${entryPath}`, error);
-					}
-				}
-			} catch (error) {
-				logError(`Failed to scan skills dir ${dir}`, error);
-			}
-		}
-	}
 	const templateDirs = [
 		join(homeDir, ".pi", "agent", "commands"),
 		join(homeDir, ".claude", "commands"),
@@ -303,7 +267,6 @@ export function discoverLoadedResources(includeSkillNames: boolean = true): {
 	return {
 		counts: { contextFiles, extensions, promptTemplates, themes },
 		names: {
-			skills: skillNames,
 			extensions: extensionNames,
 			prompts: promptNames,
 			themes: themeNames,
@@ -316,7 +279,7 @@ export function discoverLoadedResources(includeSkillNames: boolean = true): {
  * Discover loaded counts by scanning filesystem.
  */
 export function discoverLoadedCounts(): LoadedCounts {
-	return discoverLoadedResources(false).counts;
+	return discoverLoadedResources().counts;
 }
 
 // ─── Recent Sessions Discovery ────────────────────────────────────────────────
@@ -430,7 +393,6 @@ const defaultInfoPanelData: InfoPanelData = {
 		themes: 0,
 	},
 	resourceNames: {
-		skills: [],
 		extensions: [],
 		prompts: [],
 		themes: [],

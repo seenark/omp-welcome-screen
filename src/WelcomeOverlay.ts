@@ -69,7 +69,6 @@ export class WelcomeOverlay implements Component {
 				themes: 0,
 			},
 			resourceNames: {
-				skills: [],
 				extensions: [],
 				prompts: [],
 				themes: [],
@@ -555,7 +554,6 @@ export class WelcomeOverlay implements Component {
 		if (this.config.showResources) {
 			const names = this.infoData.resourceNames;
 			const hasAny =
-				names.skills.length > 0 ||
 				names.extensions.length > 0 ||
 				names.prompts.length > 0 ||
 				names.themes.length > 0 ||
@@ -597,21 +595,6 @@ export class WelcomeOverlay implements Component {
 						indent +
 							dimColor +
 							"ext: " +
-							ansi.reset +
-							textColor +
-							items +
-							ansi.reset,
-					);
-				}
-				if (names.skills.length > 0) {
-					const items = names.skills
-						.slice(0, maxItemsPerCategory)
-						.map(formatName)
-						.join(dimColor + ", " + ansi.reset);
-					lines.push(
-						indent +
-							dimColor +
-							"skill: " +
 							ansi.reset +
 							textColor +
 							items +

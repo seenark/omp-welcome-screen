@@ -17,7 +17,7 @@ export type InfoPanelSection =
 	| "model" // Model name and provider
 	| "tips" // Keyboard tips
 	| "loaded" // Loaded counts (extensions, context files, prompt templates, themes)
-	| "resources" // Detailed resource listings (skills, extensions, prompts, themes)
+	| "resources" // Detailed resource listings (context files, extensions, prompts, themes)
 	| "sessions"; // Recent sessions
 
 export interface WelcomeConfig {
@@ -133,7 +133,6 @@ export interface LoadedCounts {
 }
 
 export interface ResourceNames {
-	skills: string[];
 	extensions: string[];
 	prompts: string[];
 	themes: string[];

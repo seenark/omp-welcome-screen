@@ -1,8 +1,8 @@
 <h1 align="center">pi-welcome-screen</h1>
 
 <p align="center">
-  Customizable animated ASCII art welcome overlay for the <a href="https://github.com/earendil-works/pi-mono">Pi coding agent</a>.<br/>
-  Shows on session start with animated banner, info panel, countdown, and auto-dismiss.
+  Customizable animated ASCII art welcome overlay for <a href="https://github.com/oh-my-pi/oh-my-pi">Oh-My-Pi</a>.<br/>
+  Shows on session start with animated banner, stacked info panel, countdown, and auto-dismiss.
 </p>
 
 <p align="center">
@@ -21,7 +21,7 @@
 
 - 🎨 **6 animation styles** — wave, rainbow, glitch, matrix, typewriter, static
 - 📦 **Styled overlay box** — box-drawing borders with background fill
-- 📊 **Info panel** — model, keyboard tips, loaded resources, recent sessions (two-column layout on wide terminals)
+- 📊 **Info panel** — model, keyboard tips, loaded resources, recent sessions stacked below the banner
 - 🖼️ **Custom banner** — bring your own ASCII art via `banner.txt`
 - ⏱️ **Auto-dismiss** — countdown, keypress, or agent activity
 - 🎨 **Catppuccin Mocha** — full palette, all colors by name
@@ -30,20 +30,20 @@
 
 ```bash
 # From npm (recommended)
-pi install npm:@codesook/pi-welcome-screen
+omp install npm:@codesook/pi-welcome-screen
 
 # Try without installing
-pi -e npm:@codesook/pi-welcome-screen
+omp -e npm:@codesook/pi-welcome-screen
 
 # From git
-pi install git:github.com/seenark/pi-welcome-screen
+omp install git:github.com/seenark/pi-welcome-screen
 
 # Local development
 git clone https://github.com/seenark/pi-welcome-screen.git
-pi -e /path/to/pi-welcome-screen
+omp -e /path/to/pi-welcome-screen
 ```
 
-After installing, just start `pi` — the welcome screen appears automatically on every session.
+After installing, just start `omp` — the welcome screen appears automatically on every session.
 
 ## 🖼️ Custom Banner
 
@@ -71,9 +71,10 @@ Or point to any file via config:
 **Search order** (first found wins):
 
 1. Explicit `bannerFile` path from config
-2. `~/.pi/agent/pi-welcome-screen/banner.txt`
-3. `./welcome-screen.banner.txt` (project root)
-
+2. `PI_CODING_AGENT_DIR/pi-welcome-screen/banner.txt` when `PI_CODING_AGENT_DIR` is set
+3. `~/.pi/agent/pi-welcome-screen/banner.txt`
+4. `~/${PI_CONFIG_DIR:-.omp}/agent/pi-welcome-screen/banner.txt`
+5. `./welcome-screen.banner.txt` (project root)
 > **Tip:** Keep your banner under ~80 characters wide for best results on all terminals.
 
 ## ⚙️ Configuration
@@ -96,9 +97,11 @@ Create a config file — only the fields you want to override are needed:
 
 **Config file search order** (first found wins):
 
-1. `~/.pi/agent/pi-welcome-screen/settings.json`
-2. `~/.pi/welcome-screen.config.json` (legacy)
-3. `./welcome-screen.config.json` (project root)
+1. `PI_CODING_AGENT_DIR/pi-welcome-screen/settings.json` when `PI_CODING_AGENT_DIR` is set
+2. `~/.pi/agent/pi-welcome-screen/settings.json`
+3. `~/${PI_CONFIG_DIR:-.omp}/agent/pi-welcome-screen/settings.json`
+4. `~/.pi/welcome-screen.config.json` (legacy)
+5. `./welcome-screen.config.json` (project root)
 
 ### All Options
 
@@ -155,12 +158,12 @@ Create a config file — only the fields you want to override are needed:
 
 #### Info Panel
 
-The info panel appears on the right side when the terminal is ≥ 100 chars wide, or below the banner on narrower terminals.
+The info panel appears below the banner on all terminal widths.
 
 | Option              | Type     | Default                                                      | Description                                     |
 | ------------------- | -------- | ------------------------------------------------------------ | ----------------------------------------------- |
 | `showInfoPanel`     | boolean  | `true`                                                       | Show the info panel                             |
-| `showVersion`       | boolean  | `true`                                                       | Show Pi version                                 |
+| `showVersion`       | boolean  | `true`                                                       | Show OMP/Pi CLI version                         |
 | `showModel`         | boolean  | `true`                                                       | Show model name & provider                      |
 | `showTips`          | boolean  | `true`                                                       | Show keyboard tips                              |
 | `showLoaded`        | boolean  | `true`                                                       | Show loaded counts (context files, extensions, prompts, themes) |
@@ -266,7 +269,7 @@ All color options accept these names:
 {
     "mainText": "My Brand",
     "url": "https://mybrand.io",
-    "bannerFile": "~/.pi/agent/pi-welcome-screen/banner.txt",
+    "bannerFile": "~/.omp/agent/pi-welcome-screen/banner.txt",
     "animationStyle": "rainbow",
     "animationColor": "green"
 }
@@ -274,22 +277,22 @@ All color options accept these names:
 
 ## 🛠️ Development
 
-No build step — Pi loads TypeScript directly via [jiti](https://github.com/unjs/jiti).
+No build step — Oh-My-Pi loads TypeScript directly via [jiti](https://github.com/unjs/jiti).
 
 ```bash
 # Test locally
-pi -e .
+omp -e .
 
 # Install from local path
-pi install /path/to/pi-welcome-screen
+omp install /path/to/pi-welcome-screen
 ```
 
 ## 📁 Project Structure
 
 ```
 src/
-├── index.ts           # Entry point — Pi extension factory
-├── WelcomeOverlay.ts  # Overlay component with two-column layout
+├── index.ts           # Entry point — Oh-My-Pi extension factory
+├── WelcomeOverlay.ts  # Overlay component with stacked layout
 ├── config.ts          # Defaults, Catppuccin palette, config loading
 ├── animations.ts      # ASCII banner data + frame builders per style
 ├── renderer.ts        # ANSI escape codes, color mapping, centering

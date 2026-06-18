@@ -13,6 +13,7 @@ import { discoverLoadedCounts, discoverLoadedResources } from "./info-panel.js";
 
 const originalHome = process.env.HOME;
 const originalUserProfile = process.env.USERPROFILE;
+const originalAgentDir = process.env.PI_CODING_AGENT_DIR;
 const originalCwd = process.cwd();
 
 let tempRoot = "";
@@ -27,6 +28,7 @@ beforeEach(() => {
 
 	process.env.HOME = homeDir;
 	delete process.env.USERPROFILE;
+	process.env.PI_CODING_AGENT_DIR = join(homeDir, ".omp", "agent");
 	process.chdir(cwd);
 });
 
@@ -43,6 +45,12 @@ afterEach(() => {
 		delete process.env.USERPROFILE;
 	} else {
 		process.env.USERPROFILE = originalUserProfile;
+	}
+
+	if (originalAgentDir === undefined) {
+		delete process.env.PI_CODING_AGENT_DIR;
+	} else {
+		process.env.PI_CODING_AGENT_DIR = originalAgentDir;
 	}
 
 	rmSync(tempRoot, { recursive: true, force: true });
@@ -138,4 +146,42 @@ test("discoverLoadedResources is not tied to skill directories", () => {
 	} finally {
 		debugSpy.mockRestore();
 	}
+});
+
+test("discoverLoadedResources includes Oh-My-Pi agent directories", () => {
+	const homeDir = process.env.HOME;
+	if (homeDir === undefined) throw new Error("HOME must be set by test setup");
+
+	const extensionDir = join(
+		homeDir,
+		".omp",
+		"agent",
+		"extensions",
+		"demo-omp-extension",
+	);
+	mkdirSync(extensionDir, { recursive: true });
+	writeFileSync(join(extensionDir, "package.json"), "{}\n");
+
+	const commandDir = join(homeDir, ".omp", "agent", "commands");
+	mkdirSync(commandDir, { recursive: true });
+	writeFileSync(join(commandDir, "omp-plan.md"), "# OMP Command\n");
+
+	const themeDir = join(homeDir, ".omp", "agent", "themes");
+	mkdirSync(themeDir, { recursive: true });
+	writeFileSync(join(themeDir, "mocha.json"), "{}\n");
+
+	expect(discoverLoadedResources()).toEqual({
+		counts: {
+			contextFiles: 0,
+			extensions: 1,
+			promptTemplates: 1,
+			themes: 1,
+		},
+		names: {
+			contextFiles: [],
+			extensions: ["demo-omp-extension"],
+			prompts: ["/omp-plan"],
+			themes: ["mocha"],
+		},
+	});
 });

@@ -108,6 +108,41 @@ test("loadConfig prefers PI_CODING_AGENT_DIR override", () => {
 	expect(loadConfig().mainText).toBe("custom");
 });
 
+test("loadConfig includes terminal banner command default and override", () => {
+	expect(loadConfig().terminalBannerCommand).toBe("");
+
+	const configDir = join(homeDir, ".pi", "agent", "pi-welcome-screen");
+	mkdirSync(configDir, { recursive: true });
+	writeFileSync(
+		join(configDir, "settings.json"),
+		JSON.stringify({ terminalBannerCommand: "ascii-aniation run" }),
+	);
+
+	expect(loadConfig().terminalBannerCommand).toBe("ascii-aniation run");
+});
+
+test("loadConfig includes terminal banner sizing defaults and overrides", () => {
+	expect(loadConfig().terminalBannerRows).toBe(6);
+	expect(loadConfig().terminalBannerColumns).toBe(0);
+	expect(loadConfig().terminalBannerFrameDelayMs).toBe(33);
+
+	const configDir = join(homeDir, ".pi", "agent", "pi-welcome-screen");
+	mkdirSync(configDir, { recursive: true });
+	writeFileSync(
+		join(configDir, "settings.json"),
+		JSON.stringify({
+			terminalBannerRows: 10,
+			terminalBannerColumns: 100,
+			terminalBannerFrameDelayMs: 50,
+		}),
+	);
+
+	const config = loadConfig();
+	expect(config.terminalBannerRows).toBe(10);
+	expect(config.terminalBannerColumns).toBe(100);
+	expect(config.terminalBannerFrameDelayMs).toBe(50);
+});
+
 test("loadBannerFile reads ~/.pi/agent/pi-welcome-screen/banner.txt", () => {
 	const configDir = join(homeDir, ".pi", "agent", "pi-welcome-screen");
 	mkdirSync(configDir, { recursive: true });

@@ -14,6 +14,10 @@ import {
   buildAnimationFrames,
   getFrameCount
 } from "./animations.js";
+import {
+  TerminalBannerProcess,
+  getTerminalBannerCommand
+} from "./terminal-banner.js";
 
 export class WelcomeOverlay {
   config;
@@ -30,11 +34,27 @@ export class WelcomeOverlay {
   bannerLines;
   scrollOffset = 0;
   cachedContentLines = [];
+  terminalBanner = null;
+  terminalBannerCommand = "";
+  bannerHeight = 0;
+  bannerWidth = 0;
+  terminalBannerRows = 0;
+  terminalBannerColumns = 0;
   constructor(config, done, infoData, bannerLines) {
     this.config = config;
     this.countdown = config.countdown;
     this.done = done;
     this.bannerLines = normalizeBannerWidth(bannerLines ?? BANNER_LINES);
+    this.bannerHeight = this.bannerLines.length;
+    this.bannerWidth = visibleWidth(this.bannerLines[0] ?? "");
+    this.terminalBannerCommand = getTerminalBannerCommand(config.terminalBannerCommand);
+    const terminalBannerRows = Math.max(1, Math.min(40, Math.trunc(config.terminalBannerRows)));
+    const configuredColumns = Math.trunc(config.terminalBannerColumns);
+    const terminalBannerColumns = configuredColumns > 0
+      ? Math.max(1, Math.min(200, configuredColumns))
+      : this.bannerWidth;
+    this.terminalBannerRows = terminalBannerRows;
+    this.terminalBannerColumns = terminalBannerColumns;
     this.infoData = infoData ?? {
       modelName: config.modelName || "omp agent",
       providerName: config.providerName || "omp",
@@ -58,6 +78,17 @@ export class WelcomeOverlay {
   }
   startAnimation(tui) {
     this.tui = tui;
+    if (this.terminalBannerCommand !== "") {
+      this.terminalBanner = new TerminalBannerProcess({
+        command: this.terminalBannerCommand,
+        rows: this.terminalBannerRows,
+        columns: this.terminalBannerColumns,
+        frameDelayMs: this.config.terminalBannerFrameDelayMs,
+        onFrame: () => this.tui?.requestRender(),
+        debug: this.config.debug
+      });
+      this.terminalBanner.start();
+    }
     if (this.frames.length > 1) {
       this.lastFrameTime = Date.now();
       this.animInterval = setInterval(() => {
@@ -112,14 +143,16 @@ export class WelcomeOverlay {
     this.done();
   }
   stopTimers() {
-    if (this.animInterval !== null) {
+    if (this.animInterval) {
       clearInterval(this.animInterval);
       this.animInterval = null;
     }
-    if (this.countdownInterval !== null) {
+    if (this.countdownInterval) {
       clearInterval(this.countdownInterval);
       this.countdownInterval = null;
     }
+    this.terminalBanner?.stop();
+    this.terminalBanner = null;
     this.tui = null;
   }
   dispose() {
@@ -322,7 +355,12 @@ export class WelcomeOverlay {
         lines.push(centerPadLine(colorized, innerWidth));
       }
     }
-    if (this.config.showBanner && (this.config.showMainText || this.config.showUrl)) {
+    if (this.terminalBanner?.shouldRender()) {
+      for (const terminalLine of this.terminalBanner.getLines()) {
+        lines.push(centerPadLine(terminalLine + ansi.reset, innerWidth));
+      }
+    }
+    if ((this.config.showBanner || this.terminalBanner?.shouldRender()) && (this.config.showMainText || this.config.showUrl)) {
       lines.push(" ".repeat(innerWidth));
     }
     if (this.config.showMainText) {

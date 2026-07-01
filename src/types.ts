@@ -113,6 +113,14 @@ export interface WelcomeConfig {
 
 	/** Path to a custom banner text file (empty = use built-in banner) */
 	bannerFile: string;
+	/** Shell command that renders an optional second terminal-animation banner (empty = disabled) */
+	terminalBannerCommand: string;
+	/** Visible rows for the optional terminal-animation banner */
+	terminalBannerRows: number;
+	/** Visible columns for the optional terminal-animation banner (0 = match current banner width) */
+	terminalBannerColumns: number;
+	/** Minimum milliseconds between terminal-animation banner renders */
+	terminalBannerFrameDelayMs: number;
 }
 
 // Deep partial for config merging

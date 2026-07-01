@@ -24,6 +24,7 @@
 - 📊 **Info panel** — model, keyboard tips, loaded resources, recent sessions stacked below the banner
 - 🖼️ **Custom banner** — bring your own ASCII art via `banner.txt`
 - ⏱️ **Auto-dismiss** — countdown, keypress, or agent activity
+- 🖥️ **Optional terminal-animation banner** — run a local CLI to render a second same-size banner below the built-in/custom banner
 - 🎨 **Catppuccin Mocha** — full palette, all colors by name
 
 ## 📦 Install
@@ -115,7 +116,10 @@ Create a config file — only the fields you want to override are needed:
 | `animationText`  | string | `"Welcome"`              | Text used for some animations                  |
 | `frameDelayMs`   | number | `80`                     | Milliseconds between animation frames (0–1000) |
 | `bannerFile`     | string | `""`                     | Path to custom banner `.txt` file              |
-
+| `terminalBannerCommand` | string | `""` | Shell command for optional second terminal-animation banner; empty disables it |
+| `terminalBannerRows` | number | `6` | Visible rows for optional terminal-animation banner |
+| `terminalBannerColumns` | number | `0` | Visible columns for optional terminal-animation banner; `0` matches the current banner width |
+| `terminalBannerFrameDelayMs` | number | `33` | Minimum milliseconds between terminal-animation banner renders |
 #### Layout
 
 | Option             | Type   | Default     | Description                                             |
@@ -174,6 +178,8 @@ The info panel appears below the banner on all terminal widths.
 | `providerName`      | string   | `""`                                                         | Override provider name (auto-detected if empty) |
 | `logoChar`          | string   | `"π"`                                                        | Character used for the logo                     |
 
+
+`terminalBannerCommand` is executed by the local shell. Keep it in user-controlled config only; do not feed untrusted input into it. Terminal banner output is captured through Bun.Terminal when available, with a Python stdlib PTY bridge fallback for Node/Pi runtimes. The parser preserves SGR foreground/background colors and publishes frames at the configured cadence so clear/redraw animations do not expose partial frames.
 ### Animation Styles
 
 | Style        | Description                                        |
@@ -272,6 +278,17 @@ All color options accept these names:
     "bannerFile": "~/.omp/agent/pi-welcome-screen/banner.txt",
     "animationStyle": "rainbow",
     "animationColor": "green"
+}
+```
+
+### Terminal animation CLI banner
+
+```json
+{
+    "terminalBannerCommand": "ascii-animation run",
+    "terminalBannerRows": 8,
+    "terminalBannerColumns": 100,
+    "terminalBannerFrameDelayMs": 33
 }
 ```
 

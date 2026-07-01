@@ -49,14 +49,14 @@ export function colorize(text, colorName) {
 export function centerLine(line, width) {
   const visibleLen = visibleWidth(line);
   if (visibleLen >= width)
-    return stripAnsi(line).slice(0, width);
+    return clipAnsi(line, width);
   const pad = Math.floor((width - visibleLen) / 2);
   return " ".repeat(pad) + line;
 }
 export function centerPadLine(line, width) {
   const stripped = stripAnsi(line);
   if (stripped.length >= width) {
-    return stripAnsi(line).slice(0, width);
+    return clipAnsi(line, width);
   }
   const leftPad = Math.floor((width - stripped.length) / 2);
   const rightPad = width - stripped.length - leftPad;
@@ -65,7 +65,7 @@ export function centerPadLine(line, width) {
 export function fitLine(line, width) {
   const stripped = stripAnsi(line);
   if (stripped.length > width) {
-    return stripAnsi(line).slice(0, width - 1) + "…";
+    return clipAnsi(line, Math.max(0, width - 1), "…");
   }
   return line + " ".repeat(width - stripped.length);
 }
@@ -74,6 +74,49 @@ export function stripAnsi(str) {
 }
 export function visibleWidth(str) {
   return stripAnsi(str).length;
+}
+
+function clipAnsi(line, width, suffix = "") {
+  if (width <= 0) {
+    return suffix;
+  }
+  const visibleLimit = Math.max(0, width - suffix.length);
+  let clipped = "";
+  let visibleCount = 0;
+  let sawAnsi = false;
+  let index = 0;
+  while (index < line.length && visibleCount < visibleLimit) {
+    const sequence = readAnsiSequence(line, index);
+    if (sequence !== null) {
+      clipped += sequence;
+      sawAnsi = true;
+      index += sequence.length;
+      continue;
+    }
+    clipped += line[index];
+    visibleCount += 1;
+    index += 1;
+  }
+  clipped += suffix;
+  if (sawAnsi && !clipped.endsWith(ansi.reset)) {
+    clipped += ansi.reset;
+  }
+  return clipped;
+}
+
+function readAnsiSequence(line, start) {
+  if (line[start] !== "\x1b" || line[start + 1] !== "[") {
+    return null;
+  }
+  let end = start + 2;
+  while (end < line.length) {
+    const char = line[end];
+    if ((char >= "A" && char <= "Z") || (char >= "a" && char <= "z")) {
+      return line.slice(start, end + 1);
+    }
+    end += 1;
+  }
+  return null;
 }
 export function resolveColorMarkers(line, colorMap) {
   return line.replace(/\x00COLOR:(\w+)\x00/g, (_, colorName) => {

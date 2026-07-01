@@ -49,7 +49,11 @@ export const DEFAULT_CONFIG = {
   modelName: "",
   providerName: "",
   logoChar: "π",
-  bannerFile: ""
+  bannerFile: "",
+  terminalBannerCommand: "",
+  terminalBannerRows: 6,
+  terminalBannerColumns: 0,
+  terminalBannerFrameDelayMs: 33,
 };
 export function loadConfig() {
   const userConfig = loadConfigFile();
@@ -140,6 +144,18 @@ export function validateConfig(cfg) {
     if (typeof val === "string" && val !== "" && !validColors.includes(val)) {
       errors.push(`Invalid color '${val}' for ${field}. Must be a Catppuccin Mocha color name.`);
     }
+  }
+  if (cfg.terminalBannerCommand !== undefined && typeof cfg.terminalBannerCommand !== "string") {
+    errors.push("terminalBannerCommand must be a string");
+  }
+  if (cfg.terminalBannerRows !== undefined && (!Number.isInteger(cfg.terminalBannerRows) || cfg.terminalBannerRows < 1 || cfg.terminalBannerRows > 40)) {
+    errors.push("terminalBannerRows must be an integer between 1 and 40");
+  }
+  if (cfg.terminalBannerColumns !== undefined && (!Number.isInteger(cfg.terminalBannerColumns) || cfg.terminalBannerColumns < 0 || cfg.terminalBannerColumns > 200)) {
+    errors.push("terminalBannerColumns must be an integer between 0 and 200");
+  }
+  if (cfg.terminalBannerFrameDelayMs !== undefined && (!Number.isInteger(cfg.terminalBannerFrameDelayMs) || cfg.terminalBannerFrameDelayMs < 0 || cfg.terminalBannerFrameDelayMs > 1000)) {
+    errors.push("terminalBannerFrameDelayMs must be an integer between 0 and 1000");
   }
   if (cfg.frameDelayMs !== undefined && (cfg.frameDelayMs < 0 || cfg.frameDelayMs > 1000)) {
     errors.push("frameDelayMs must be between 0 and 1000");

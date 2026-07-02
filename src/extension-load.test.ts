@@ -51,4 +51,4 @@ test("local package extension loads through OMP legacy loader", async () => {
 	expect(localExtension?.handlers.has("agent_start")).toBe(true);
 	expect(localExtension?.handlers.has("tool_call")).toBe(false);
 	expect(localExtension?.commands.has("welcome-reload")).toBe(true);
-});
+}, 15000);

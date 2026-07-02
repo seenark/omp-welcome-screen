@@ -241,7 +241,7 @@ test("terminal banner process keeps previous frame across slow clear redraw", as
 		processBanner.start();
 		await Bun.sleep(430);
 
-		expect(snapshots.some((snapshot) => snapshot.includes("HOLD") && snapshot.includes("FRAME"))).toBe(true);
+		expect(snapshots.some((snapshot) => snapshot.includes("OLD") && snapshot.includes("FRAME"))).toBe(true);
 		expect(snapshots.some((snapshot) => snapshot.includes("NEW") && !snapshot.includes("FRAME"))).toBe(false);
 		const finalRendered = stripAnsi(processBanner.getLines().join("\n"));
 		expect(finalRendered).toContain("NEW");

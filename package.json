@@ -20,12 +20,17 @@
     ],
     "author": "Code Sook",
     "license": "MIT",
+    "packageManager": "pnpm@11.0.0",
+    "publishConfig": {
+        "access": "public"
+    },
     "repository": {
         "type": "git",
         "url": "git+https://github.com/seenark/pi-welcome-screen.git"
     },
     "scripts": {
         "build": "echo 'No build needed — Pi loads TypeScript extensions via jiti'",
+        "lint": "bun test",
         "test": "bun test",
         "release": "npm publish --access public"
     },

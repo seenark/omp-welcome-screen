@@ -320,6 +320,24 @@ src/
 └── types.ts           # Config interface, animation & border types
 ```
 
+## Release
+
+This package is published automatically when a Git tag is pushed.
+
+Example:
+
+```bash
+git checkout main
+git pull
+
+git tag -a v0.1.0 -m "Release v0.1.0"
+git push origin v0.1.0
+```
+
+The GitHub Actions workflow reads the tag name, sets the package version inside CI, builds the package, and publishes it to npm.
+
+The tag is the source of truth for the published npm version.
+
 ## 📄 License
 
 MIT © [Code Sook](https://github.com/seenark)

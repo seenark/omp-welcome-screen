@@ -414,8 +414,8 @@ sys.exit(proc.returncode or 0)`;
 
 function normalizeChunk(value: string): string {
 	return value
-		.replace(/\r\n/g, "\n")
-		.replace(/\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g, "");
+		.replace(/\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g, "")
+		.replace(/\r?\n/g, "\r\n");
 }
 
 function getCaptureRows(rows: number): number {

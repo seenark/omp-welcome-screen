@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { EventEmitter } from "node:events";
 import { StringDecoder } from "node:string_decoder";
+import { Terminal, type IBuffer, type IBufferCell } from "@xterm/headless";
 
 export interface TerminalBannerFrameOptions {
 	rows: number;
@@ -60,6 +61,14 @@ type BunSpawnFunction = (
 	options: { terminal: BunTerminalInstance; env: Record<string, string> },
 ) => BunSpawnedProcess;
 
+type HeadlessTerminal = Terminal & {
+	_core: {
+		_writeBuffer: {
+			writeSync(data: string): void;
+		};
+	};
+};
+
 const DEFAULT_STYLE: TerminalStyle = {
 	fg: "",
 	bg: "",
@@ -71,37 +80,41 @@ export class TerminalBannerFrameBuffer {
 	private readonly captureRows: number;
 	private readonly captureColumns: number;
 	private readonly columns: number;
-	private screen: TerminalCell[][];
+	private readonly terminal: HeadlessTerminal;
 	private lines: string[];
 	private pendingLines: string[];
 	private pendingContent = false;
 	private content = false;
-	private cursorRow = 0;
-	private cursorColumn = 0;
-	private currentStyle: TerminalStyle = cloneStyle(DEFAULT_STYLE);
-	private state: "text" | "escape" | "csi" | "osc" = "text";
-	private sequence = "";
-	private oscEscapePending = false;
 	private clearRedrawInProgress = false;
-	private readonly redrawTouchedRows = new Set<number>();
 
 	constructor(options: TerminalBannerFrameOptions) {
 		this.rows = options.rows;
 		this.captureRows = getCaptureRows(options.rows);
 		this.captureColumns = getCaptureColumns(options.columns);
 		this.columns = options.columns;
-		this.screen = createBlankScreen(this.captureRows, this.captureColumns);
-		this.lines = selectViewport(this.screen, this.rows, this.columns);
+		this.terminal = createHeadlessTerminal(this.captureColumns, this.captureRows, () => {
+			if (this.content) {
+				this.clearRedrawInProgress = true;
+			}
+		});
+		const initialScreen = captureTerminalScreen(
+			this.terminal.buffer.active,
+			this.captureRows,
+			this.captureColumns,
+		);
+		this.lines = selectViewport(initialScreen, this.rows, this.columns);
 		this.pendingLines = [...this.lines];
 	}
 
 	ingest(chunk: string): boolean {
-		for (const char of normalizeChunk(chunk)) {
-			this.consumeCharacter(char);
-		}
-
-		this.pendingLines = selectViewport(this.screen, this.rows, this.columns);
-		this.pendingContent = this.screen.some((row) => row.some((cell) => cell.char !== " "));
+		writeTerminalChunk(this.terminal, normalizeChunk(chunk));
+		const screen = captureTerminalScreen(
+			this.terminal.buffer.active,
+			this.captureRows,
+			this.captureColumns,
+		);
+		this.pendingLines = selectViewport(screen, this.rows, this.columns);
+		this.pendingContent = screen.some((row) => row.some((cell) => cell.char !== " "));
 		return !sameLines(this.pendingLines, this.lines);
 	}
 
@@ -109,13 +122,12 @@ export class TerminalBannerFrameBuffer {
 		if (sameLines(this.pendingLines, this.lines) && this.pendingContent === this.content) {
 			return false;
 		}
-		if (!options.force && this.clearRedrawInProgress && !this.hasCompletedClearRedraw()) {
+		if (!options.force && this.clearRedrawInProgress && this.isPartialClearRedraw()) {
 			return false;
 		}
 		this.lines = [...this.pendingLines];
 		this.content = this.pendingContent;
 		this.clearRedrawInProgress = false;
-		this.redrawTouchedRows.clear();
 		return true;
 	}
 
@@ -127,210 +139,9 @@ export class TerminalBannerFrameBuffer {
 		return this.content;
 	}
 
-	private hasCompletedClearRedraw(): boolean {
+	private isPartialClearRedraw(): boolean {
 		const requiredRows = Math.max(1, countNonBlankRows(this.lines));
-		return this.redrawTouchedRows.size >= requiredRows;
-	}
-
-	private consumeCharacter(char: string): void {
-		if (this.state === "text") {
-			if (char === "\x1b") {
-				this.state = "escape";
-				this.sequence = "";
-				return;
-			}
-			if (char === "\n") {
-				this.cursorRow = Math.min(this.captureRows - 1, this.cursorRow + 1);
-				this.cursorColumn = 0;
-				return;
-			}
-			if (char === "\r") {
-				this.cursorColumn = 0;
-				return;
-			}
-			if (char === "\b") {
-				this.cursorColumn = Math.max(0, this.cursorColumn - 1);
-				return;
-			}
-			if (char === "\t") {
-				const tabWidth = 4;
-				const nextStop = Math.min(
-					this.captureColumns,
-					this.cursorColumn + (tabWidth - (this.cursorColumn % tabWidth)),
-				);
-				if (nextStop === this.cursorColumn) {
-					this.writeCharacter(" ");
-					return;
-				}
-				while (this.cursorColumn < nextStop) {
-					this.writeCharacter(" ");
-				}
-				return;
-			}
-			if (char >= " " && char !== "\x7f") {
-				this.writeCharacter(char);
-			}
-			return;
-		}
-
-		if (this.state === "escape") {
-			if (char === "[") {
-				this.state = "csi";
-				this.sequence = "";
-				return;
-			}
-			if (char === "]") {
-				this.state = "osc";
-				this.sequence = "";
-				this.oscEscapePending = false;
-				return;
-			}
-			if (char === "c") {
-				this.resetScreen();
-			}
-			this.state = "text";
-			this.sequence = "";
-			return;
-		}
-
-		if (this.state === "osc") {
-			if (this.oscEscapePending) {
-				this.oscEscapePending = false;
-				if (char === "\\") {
-					this.state = "text";
-					this.sequence = "";
-					return;
-				}
-			}
-			if (char === "\x07") {
-				this.state = "text";
-				this.sequence = "";
-				return;
-			}
-			if (char === "\x1b") {
-				this.oscEscapePending = true;
-			}
-			return;
-		}
-
-		this.sequence += char;
-		if (char >= "@" && char <= "~") {
-			this.applyCsi(this.sequence);
-			this.state = "text";
-			this.sequence = "";
-		}
-	}
-
-	private applyCsi(sequence: string): void {
-		const final = sequence.at(-1) ?? "";
-		const rawParams = sequence.slice(0, -1);
-		const params = rawParams.replace(/^\?/, "").split(";");
-
-		if (final === "H" || final === "f") {
-			const row = Number(params[0] || "1");
-			const column = Number(params[1] || "1");
-			this.cursorRow = Number.isFinite(row) ? Math.min(this.captureRows - 1, Math.max(0, row - 1)) : 0;
-			this.cursorColumn = Number.isFinite(column)
-				? Math.min(this.captureColumns - 1, Math.max(0, column - 1))
-				: 0;
-			return;
-		}
-
-		if (final === "J") {
-			const mode = params[0] || "0";
-			if (mode === "2" || mode === "3") {
-				this.clearScreen();
-			}
-			return;
-		}
-		if (final === "m") {
-			this.currentStyle = applySgrParams(this.currentStyle, rawParams);
-			return;
-		}
-
-		if (final === "K") {
-			const row = this.screen[this.cursorRow];
-			if (!row) {
-				return;
-			}
-			const mode = params[0] || "0";
-			const start = mode === "1" || mode === "2" ? 0 : this.cursorColumn;
-			const end = mode === "0" ? this.captureColumns - 1 : mode === "1" ? this.cursorColumn : this.captureColumns - 1;
-			for (let index = start; index <= end; index++) {
-				row[index] = { char: " ", style: cloneStyle(DEFAULT_STYLE) };
-			}
-			return;
-		}
-
-		if (final === "A") {
-			const amount = Number(params[0] || "1");
-			this.cursorRow = Math.max(0, this.cursorRow - (Number.isFinite(amount) ? amount : 1));
-			return;
-		}
-
-		if (final === "B") {
-			const amount = Number(params[0] || "1");
-			this.cursorRow = Math.min(this.captureRows - 1, this.cursorRow + (Number.isFinite(amount) ? amount : 1));
-			return;
-		}
-
-		if (final === "C") {
-			const amount = Number(params[0] || "1");
-			this.cursorColumn = Math.min(
-				this.captureColumns - 1,
-				this.cursorColumn + (Number.isFinite(amount) ? amount : 1),
-			);
-			return;
-		}
-
-		if (final === "D") {
-			const amount = Number(params[0] || "1");
-			this.cursorColumn = Math.max(0, this.cursorColumn - (Number.isFinite(amount) ? amount : 1));
-			return;
-		}
-
-		if (final === "G") {
-			const column = Number(params[0] || "1");
-			this.cursorColumn = Number.isFinite(column)
-				? Math.min(this.captureColumns - 1, Math.max(0, column - 1))
-				: 0;
-		}
-	}
-
-	private writeCharacter(char: string): void {
-		if (this.cursorRow < 0 || this.cursorRow >= this.captureRows) {
-			return;
-		}
-		if (this.cursorColumn >= this.captureColumns) {
-			this.cursorColumn = 0;
-			this.cursorRow = Math.min(this.captureRows - 1, this.cursorRow + 1);
-		}
-		if (this.cursorRow < 0 || this.cursorRow >= this.captureRows) {
-			return;
-		}
-		this.screen[this.cursorRow]![this.cursorColumn] = {
-			char,
-			style: cloneStyle(this.currentStyle),
-		};
-		if (this.clearRedrawInProgress && char !== " ") {
-			this.redrawTouchedRows.add(this.cursorRow);
-		}
-		this.cursorColumn += 1;
-	}
-
-	private clearScreen(): void {
-		this.screen = createBlankScreen(this.captureRows, this.captureColumns);
-		if (this.content) {
-			this.clearRedrawInProgress = true;
-			this.redrawTouchedRows.clear();
-		}
-	}
-
-	private resetScreen(): void {
-		this.clearScreen();
-		this.cursorRow = 0;
-		this.cursorColumn = 0;
-		this.currentStyle = cloneStyle(DEFAULT_STYLE);
+		return countNonBlankRows(this.pendingLines) < requiredRows;
 	}
 }
 
@@ -670,74 +481,6 @@ function styleToAnsi(style: TerminalStyle): string {
 	return params.length === 0 ? "" : `\x1b[${params.join(";")}m`;
 }
 
-function applySgrParams(style: TerminalStyle, rawParams: string): TerminalStyle {
-	if (rawParams === "") {
-		return cloneStyle(DEFAULT_STYLE);
-	}
-
-	const next = cloneStyle(style);
-	const params = rawParams.split(";");
-	for (let index = 0; index < params.length; index++) {
-		const param = params[index] || "0";
-		if (param === "0") {
-			next.fg = DEFAULT_STYLE.fg;
-			next.bg = DEFAULT_STYLE.bg;
-			next.intensity = DEFAULT_STYLE.intensity;
-			continue;
-		}
-		if (param === "1" || param === "2") {
-			next.intensity = param;
-			continue;
-		}
-		if (param === "22") {
-			next.intensity = "";
-			continue;
-		}
-		const code = Number(param);
-		if (!Number.isFinite(code)) {
-			continue;
-		}
-		if ((code >= 30 && code <= 37) || (code >= 90 && code <= 97)) {
-			next.fg = String(code);
-			continue;
-		}
-		if (code === 39) {
-			next.fg = "";
-			continue;
-		}
-		if ((code >= 40 && code <= 47) || (code >= 100 && code <= 107)) {
-			next.bg = String(code);
-			continue;
-		}
-		if (code === 49) {
-			next.bg = "";
-			continue;
-		}
-		if (code === 38 || code === 48) {
-			const channel = code === 38 ? "fg" : "bg";
-			const mode = params[index + 1];
-			if (mode === "2") {
-				const red = parseSgrByte(params[index + 2]);
-				const green = parseSgrByte(params[index + 3]);
-				const blue = parseSgrByte(params[index + 4]);
-				if (red !== null && green !== null && blue !== null) {
-					next[channel] = `${code};2;${red};${green};${blue}`;
-				}
-				index += 4;
-				continue;
-			}
-			if (mode === "5") {
-				const color = parseSgrByte(params[index + 2]);
-				if (color !== null) {
-					next[channel] = `${code};5;${color}`;
-				}
-				index += 2;
-			}
-		}
-	}
-	return next;
-}
-
 function renderStyledLine(row: TerminalCell[]): string {
 	let rendered = "";
 	let activeStyle = cloneStyle(DEFAULT_STYLE);
@@ -761,6 +504,98 @@ function renderStyledLine(row: TerminalCell[]): string {
 		rendered += "\x1b[0m";
 	}
 	return rendered;
+}
+
+function createHeadlessTerminal(columns: number, rows: number, onFullClear: () => void): HeadlessTerminal {
+	const terminal = new Terminal({
+		allowProposedApi: true,
+		cols: columns,
+		rows,
+		scrollback: 0,
+	}) as HeadlessTerminal;
+	terminal.parser.registerCsiHandler({ final: "J" }, (params) => {
+		const mode = params[0];
+		if (mode === 2 || mode === 3) {
+			onFullClear();
+		}
+		return false;
+	});
+	terminal.parser.registerEscHandler({ final: "c" }, () => {
+		onFullClear();
+		return false;
+	});
+	return terminal;
+}
+
+function writeTerminalChunk(terminal: HeadlessTerminal, chunk: string): void {
+	terminal._core._writeBuffer.writeSync(chunk);
+}
+
+function captureTerminalScreen(buffer: IBuffer, rows: number, columns: number): TerminalCell[][] {
+	const blankScreen = createBlankScreen(rows, columns);
+	const cell = buffer.getNullCell();
+	for (let rowIndex = 0; rowIndex < rows; rowIndex++) {
+		const line = buffer.getLine(rowIndex);
+		if (!line) {
+			continue;
+		}
+		for (let columnIndex = 0; columnIndex < columns; columnIndex++) {
+			const terminalCell = line.getCell(columnIndex, cell);
+			blankScreen[rowIndex]![columnIndex] = terminalCell
+				? convertTerminalCell(terminalCell)
+				: { char: " ", style: cloneStyle(DEFAULT_STYLE) };
+		}
+	}
+	return blankScreen;
+}
+
+function convertTerminalCell(cell: IBufferCell): TerminalCell {
+	if (cell.getWidth() === 0) {
+		return { char: " ", style: cloneStyle(DEFAULT_STYLE) };
+	}
+	const chars = cell.getChars();
+	if (chars === "" || chars === " ") {
+		return { char: " ", style: cloneStyle(DEFAULT_STYLE) };
+	}
+	let style = {
+		fg: encodeTerminalColor("fg", cell),
+		bg: encodeTerminalColor("bg", cell),
+		intensity: cell.isBold() ? "1" : cell.isDim() ? "2" : "",
+	} satisfies TerminalStyle;
+	if (cell.isInverse()) {
+		style = {
+			fg: style.bg,
+			bg: style.fg,
+			intensity: style.intensity,
+		};
+	}
+	return { char: chars, style };
+}
+
+function encodeTerminalColor(channel: "fg" | "bg", cell: IBufferCell): string {
+	const defaultColor = channel === "fg" ? cell.isFgDefault() : cell.isBgDefault();
+	if (defaultColor) {
+		return "";
+	}
+	const rgbColor = channel === "fg" ? cell.isFgRGB() : cell.isBgRGB();
+	if (rgbColor) {
+		const encoded = encodeRgbColor(channel === "fg" ? 38 : 48, channel === "fg" ? cell.getFgColor() : cell.getBgColor());
+		return encoded;
+	}
+	const paletteColor = channel === "fg" ? cell.isFgPalette() : cell.isBgPalette();
+	if (paletteColor) {
+		const prefix = channel === "fg" ? 38 : 48;
+		const value = channel === "fg" ? cell.getFgColor() : cell.getBgColor();
+		return `${prefix};5;${value}`;
+	}
+	return "";
+}
+
+function encodeRgbColor(prefix: 38 | 48, color: number): string {
+	const red = (color >> 16) & 0xff;
+	const green = (color >> 8) & 0xff;
+	const blue = color & 0xff;
+	return `${prefix};2;${red};${green};${blue}`;
 }
 
 function findContentBounds(screen: TerminalCell[][]): {
@@ -833,17 +668,6 @@ function countNonBlankRows(lines: string[]): number {
 		}
 	}
 	return count;
-}
-
-function parseSgrByte(value: string | undefined): number | null {
-	if (value === undefined || value === "") {
-		return null;
-	}
-	const numeric = Number(value);
-	if (!Number.isInteger(numeric) || numeric < 0 || numeric > 255) {
-		return null;
-	}
-	return numeric;
 }
 
 function buildTerminalBannerEnv(): Record<string, string> {

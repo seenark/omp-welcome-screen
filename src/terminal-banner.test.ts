@@ -72,6 +72,19 @@ test("terminal banner frame buffer places text by cursor position", () => {
 	]);
 });
 
+test("terminal banner frame buffer restores cursor position", () => {
+	const buffer = new TerminalBannerFrameBuffer({ rows: 3, columns: 8 });
+
+	buffer.ingest("\x1b[2J\x1b[HAB\x1b7\x1b[2;5HXY\x1b8Z");
+	expect(buffer.publish()).toBe(true);
+
+	expect(buffer.getLines()).toEqual([
+		"ABZ     ",
+		"    XY  ",
+		"        ",
+	]);
+});
+
 test("terminal banner frame buffer preserves sgr color for visible cells", () => {
 	const buffer = new TerminalBannerFrameBuffer({ rows: 1, columns: 4 });
 

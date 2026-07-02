@@ -34,7 +34,8 @@
         "@oh-my-pi/pi-tui": "*"
     },
     "dependencies": {
-        "@oh-my-pi/pi-utils": "*"
+        "@oh-my-pi/pi-utils": "*",
+        "@xterm/headless": "^6.0.0"
     },
     "omp": {
         "extensions": [

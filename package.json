@@ -20,7 +20,6 @@
     ],
     "author": "Code Sook",
     "license": "MIT",
-    "packageManager": "pnpm@11.0.0",
     "publishConfig": {
         "access": "public"
     },

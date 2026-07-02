@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { EventEmitter } from "node:events";
+import { StringDecoder } from "node:string_decoder";
 
 export interface TerminalBannerFrameOptions {
 	rows: number;
@@ -81,6 +82,8 @@ export class TerminalBannerFrameBuffer {
 	private state: "text" | "escape" | "csi" | "osc" = "text";
 	private sequence = "";
 	private oscEscapePending = false;
+	private clearRedrawInProgress = false;
+	private readonly redrawTouchedRows = new Set<number>();
 
 	constructor(options: TerminalBannerFrameOptions) {
 		this.rows = options.rows;
@@ -102,12 +105,17 @@ export class TerminalBannerFrameBuffer {
 		return !sameLines(this.pendingLines, this.lines);
 	}
 
-	publish(): boolean {
+	publish(options: { force?: boolean } = {}): boolean {
 		if (sameLines(this.pendingLines, this.lines) && this.pendingContent === this.content) {
+			return false;
+		}
+		if (!options.force && this.clearRedrawInProgress && !this.hasCompletedClearRedraw()) {
 			return false;
 		}
 		this.lines = [...this.pendingLines];
 		this.content = this.pendingContent;
+		this.clearRedrawInProgress = false;
+		this.redrawTouchedRows.clear();
 		return true;
 	}
 
@@ -117,6 +125,11 @@ export class TerminalBannerFrameBuffer {
 
 	hasContent(): boolean {
 		return this.content;
+	}
+
+	private hasCompletedClearRedraw(): boolean {
+		const requiredRows = Math.max(1, countNonBlankRows(this.lines));
+		return this.redrawTouchedRows.size >= requiredRows;
 	}
 
 	private consumeCharacter(char: string): void {
@@ -299,11 +312,18 @@ export class TerminalBannerFrameBuffer {
 			char,
 			style: cloneStyle(this.currentStyle),
 		};
+		if (this.clearRedrawInProgress && char !== " ") {
+			this.redrawTouchedRows.add(this.cursorRow);
+		}
 		this.cursorColumn += 1;
 	}
 
 	private clearScreen(): void {
 		this.screen = createBlankScreen(this.captureRows, this.captureColumns);
+		if (this.content) {
+			this.clearRedrawInProgress = true;
+			this.redrawTouchedRows.clear();
+		}
 	}
 
 	private resetScreen(): void {
@@ -332,6 +352,7 @@ export class TerminalBannerProcess {
 	private readonly debug: boolean;
 	private readonly buffer: TerminalBannerFrameBuffer;
 	private readonly frameDelayMs: number;
+	private readonly stdoutDecoder = new StringDecoder("utf8");
 	private child: TerminalBannerChild | null = null;
 	private failed = false;
 	private exited = false;
@@ -340,7 +361,11 @@ export class TerminalBannerProcess {
 	private lastChangeTime = 0;
 	private pendingFrame = false;
 	private readonly handleStdout = (chunk: Buffer | string) => {
-		if (this.buffer.ingest(chunk.toString())) {
+		const decoded = typeof chunk === "string" ? chunk : this.stdoutDecoder.write(chunk);
+		if (decoded === "") {
+			return;
+		}
+		if (this.buffer.ingest(decoded)) {
 			this.lastChangeTime = Date.now();
 			this.scheduleRender();
 		}
@@ -368,7 +393,8 @@ export class TerminalBannerProcess {
 			this.renderTimer = null;
 		}
 		this.pendingFrame = false;
-		if (this.buffer.publish()) {
+		this.flushStdoutDecoder();
+		if (this.buffer.publish({ force: true })) {
 			this.onFrame();
 		}
 	};
@@ -379,7 +405,8 @@ export class TerminalBannerProcess {
 		}
 		this.pendingFrame = false;
 		this.exited = true;
-		if (this.buffer.publish()) {
+		this.flushStdoutDecoder();
+		if (this.buffer.publish({ force: true })) {
 			this.onFrame();
 		}
 		this.child = null;
@@ -445,6 +472,11 @@ export class TerminalBannerProcess {
 		return this.buffer.getLines();
 	}
 
+	private flushStdoutDecoder(): boolean {
+		const decoded = this.stdoutDecoder.end();
+		return decoded !== "" && this.buffer.ingest(decoded);
+	}
+
 	private scheduleRender(): void {
 		this.pendingFrame = true;
 		if (this.frameDelayMs === 0) {
@@ -483,10 +515,7 @@ export class TerminalBannerProcess {
 	}
 
 	shouldRender(): boolean {
-		if (this.buffer.hasContent()) {
-			return true;
-		}
-		return this.child !== null && !this.failed && !this.exited;
+		return this.buffer.hasContent();
 	}
 }
 
@@ -794,6 +823,16 @@ function sameLines(left: string[], right: string[]): boolean {
 		}
 	}
 	return true;
+}
+
+function countNonBlankRows(lines: string[]): number {
+	let count = 0;
+	for (const line of lines) {
+		if (line.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, "").trim() !== "") {
+			count += 1;
+		}
+	}
+	return count;
 }
 
 function parseSgrByte(value: string | undefined): number | null {

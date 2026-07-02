@@ -2,7 +2,10 @@ import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import {
   expandHomePath,
+  getConfiguredWelcomeConfigDirs,
+  getDefaultWelcomeConfigDirs,
   getHomeDir,
+  getSharedWelcomeConfigPath,
   getWelcomeConfigDirs
 } from "./paths.js";
 export const DEFAULT_CONFIG = {
@@ -77,7 +80,9 @@ export function loadConfig() {
 }
 function loadConfigFile() {
   const configPaths = [
-    ...getWelcomeConfigDirs().map((dir) => join(dir, "settings.json")),
+    ...getConfiguredWelcomeConfigDirs().map((dir) => join(dir, "settings.json")),
+    getSharedWelcomeConfigPath(),
+    ...getDefaultWelcomeConfigDirs().map((dir) => join(dir, "settings.json")),
     join(getHomeDir(), ".pi", "welcome-screen.config.json"),
     join(process.cwd(), "welcome-screen.config.json")
   ];
@@ -86,7 +91,7 @@ function loadConfigFile() {
       try {
         const raw = readFileSync(configPath, "utf-8");
         return JSON.parse(raw);
-      } catch {}
+      } catch { }
     }
   }
   return {};
@@ -114,7 +119,7 @@ export function loadBannerFile(config) {
       if (lines.length === 0)
         return null;
       return lines;
-    } catch {}
+    } catch { }
   }
   return null;
 }

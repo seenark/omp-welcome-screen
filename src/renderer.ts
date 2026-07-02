@@ -65,7 +65,7 @@ export function centerPadLine(line, width) {
 export function fitLine(line, width) {
   const stripped = stripAnsi(line);
   if (stripped.length > width) {
-    return clipAnsi(line, Math.max(0, width - 1), "…");
+    return clipAnsi(line, width, "…");
   }
   return line + " ".repeat(width - stripped.length);
 }

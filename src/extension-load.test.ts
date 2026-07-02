@@ -1,10 +1,35 @@
 import { expect, test } from "bun:test";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 
-import { Settings } from "../node_modules/@oh-my-pi/pi-coding-agent/src/config/settings.ts";
-import { loadSessionExtensions } from "../node_modules/@oh-my-pi/pi-coding-agent/src/sdk.ts";
-import { EventBus } from "../node_modules/@oh-my-pi/pi-coding-agent/src/utils/event-bus.ts";
+function resolvePiCodingAgentRoot() {
+	const localRoot = join(process.cwd(), "node_modules", "@oh-my-pi", "pi-coding-agent");
+	if (existsSync(localRoot)) {
+		return localRoot;
+	}
+
+	const homeDir = process.env.HOME ?? process.env.USERPROFILE;
+	if (!homeDir) {
+		return null;
+	}
+
+	const bunGlobalRoot = join(homeDir, ".bun", "install", "global", "node_modules", "@oh-my-pi", "pi-coding-agent");
+	return existsSync(bunGlobalRoot) ? bunGlobalRoot : null;
+}
 
 test("local package extension loads through OMP legacy loader", async () => {
+	const packageRoot = resolvePiCodingAgentRoot();
+	if (!packageRoot) {
+		return;
+	}
+
+	// Runtime-selected path: peer dependency may be installed locally or via Bun global packages.
+	const [{ loadSessionExtensions }, { Settings }, { EventBus }] = await Promise.all([
+		import(pathToFileURL(join(packageRoot, "src", "index.ts")).href),
+		import(pathToFileURL(join(packageRoot, "src", "config", "settings.ts")).href),
+		import(pathToFileURL(join(packageRoot, "src", "utils", "event-bus.ts")).href),
+	]);
 	const result = await loadSessionExtensions(
 		{ additionalExtensionPaths: ["."] },
 		process.cwd(),

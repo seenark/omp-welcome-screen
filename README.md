@@ -82,7 +82,7 @@ Or point to any file via config:
 
 Create a config file — only the fields you want to override are needed:
 
-**`~/.pi/agent/pi-welcome-screen/settings.json`**
+**`~/.config/codesook-omp/welcome-screen.json`**
 
 ```json
 {
@@ -99,10 +99,13 @@ Create a config file — only the fields you want to override are needed:
 **Config file search order** (first found wins):
 
 1. `PI_CODING_AGENT_DIR/pi-welcome-screen/settings.json` when `PI_CODING_AGENT_DIR` is set
-2. `~/.pi/agent/pi-welcome-screen/settings.json`
-3. `~/${PI_CONFIG_DIR:-.omp}/agent/pi-welcome-screen/settings.json`
-4. `~/.pi/welcome-screen.config.json` (legacy)
-5. `./welcome-screen.config.json` (project root)
+2. `~/.config/codesook-omp/welcome-screen.json`
+3. `~/.pi/agent/pi-welcome-screen/settings.json` (legacy)
+4. `~/${PI_CONFIG_DIR:-.omp}/agent/pi-welcome-screen/settings.json` (legacy)
+5. `~/.pi/welcome-screen.config.json` (legacy)
+6. `./welcome-screen.config.json` (project root)
+
+The `~/.config/codesook-omp/welcome-screen.json` path is the recommended location for dotfiles repositories managed with tools like GNU Stow.
 
 ### All Options
 

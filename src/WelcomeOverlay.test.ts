@@ -213,6 +213,65 @@ test("render appends cursor-positioned terminal banner below built-in banner", a
 	}
 });
 
+test("render does not reserve terminal banner rows before first content", async () => {
+	const command = `${JSON.stringify(process.execPath)} -e ${JSON.stringify(
+		"setTimeout(() => process.stdout.write('READY'), 80); setTimeout(() => {}, 160);",
+	)}`;
+	const config = {
+		...DEFAULT_CONFIG,
+		terminalBannerCommand: command,
+		terminalBannerRows: 4,
+		terminalBannerFrameDelayMs: 0,
+		animationStyle: "static",
+		showInfoPanel: false,
+		showMainText: false,
+		showUrl: false,
+		showCountdown: false,
+		showBorder: false,
+		enableScrolling: false,
+		paddingTop: 0,
+		paddingBottom: 0,
+		minTerminalWidth: 1,
+		overlayWidth: 120,
+	};
+	const overlay = new WelcomeOverlay(
+		config,
+		() => undefined,
+		undefined,
+		codesookBanner,
+	);
+	const stdout = process.stdout as typeof process.stdout & { rows: number | undefined };
+	const originalRows = stdout.rows;
+
+	try {
+		stdout.rows = codesookBanner.length;
+		const baselineLineCount = stripAnsi(overlay.render(120).join("\n")).split("\n").length;
+		overlay.startAnimation({ requestRender() {
+			return undefined;
+		} });
+
+		const beforeContent = stripAnsi(overlay.render(120).join("\n"));
+		expect(beforeContent.split("\n")).toHaveLength(baselineLineCount);
+		expect(beforeContent).not.toContain("READY");
+
+		let afterContent = "";
+		for (let attempt = 0; attempt < 40; attempt++) {
+			afterContent = stripAnsi(overlay.render(120).join("\n"));
+			if (afterContent.includes("READY")) {
+				break;
+			}
+			await waitForIo();
+			await Bun.sleep(10);
+		}
+
+		expect(afterContent).toContain("READY");
+		expect(afterContent.split("\n").length).toBeGreaterThan(baselineLineCount);
+	} finally {
+		stdout.rows = originalRows;
+		overlay.dispose();
+	}
+});
+
 test("render preserves terminal command color and configured size", async () => {
 	const command = `${JSON.stringify(process.execPath)} -e ${JSON.stringify(
 		"process.stdout.write('\\u001b[2J\\u001b[38;2;1;2;3m\\u001b[2;4HCOLOR')",
@@ -270,13 +329,13 @@ test("render preserves terminal command color and configured size", async () => 
 
 test("render preserves terminal command color when bordered overlay clips width", async () => {
 	const command = `${JSON.stringify(process.execPath)} -e ${JSON.stringify(
-		"process.stdout.write('\\u001b[2J\\u001b[38;2;1;2;3mABCDEFGHIJKLMNOPQRSTUVWXYZ')",
+		"process.stdout.write('\\u001b[2J\\u001b[38;2;1;2;3mABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ')",
 	)}`;
 	const config = {
 		...DEFAULT_CONFIG,
 		terminalBannerCommand: command,
 		terminalBannerRows: 1,
-		terminalBannerColumns: 26,
+		terminalBannerColumns: 78,
 		terminalBannerFrameDelayMs: 0,
 		animationStyle: "static",
 		showBanner: false,
@@ -288,7 +347,7 @@ test("render preserves terminal command color when bordered overlay clips width"
 		paddingTop: 0,
 		paddingBottom: 0,
 		minTerminalWidth: 1,
-		overlayWidth: 20,
+		overlayWidth: 52,
 	};
 	const overlay = new WelcomeOverlay(
 		config,
@@ -303,7 +362,7 @@ test("render preserves terminal command color when bordered overlay clips width"
 		} });
 		let rendered = "";
 		for (let attempt = 0; attempt < 40; attempt++) {
-			rendered = overlay.render(40).join("\n");
+			rendered = overlay.render(60).join("\n");
 			if (stripAnsi(rendered).includes("ABCDE")) {
 				break;
 			}
@@ -312,8 +371,7 @@ test("render preserves terminal command color when bordered overlay clips width"
 		}
 
 		expect(rendered).toContain("\x1b[38;2;1;2;3m");
-		expect(stripAnsi(rendered)).toContain("ABCDE");
-		expect(rendered).not.toContain("[38;2;1;2;3m");
+		expect(stripAnsi(rendered)).toContain("ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWX");
 	} finally {
 		overlay.dispose();
 	}

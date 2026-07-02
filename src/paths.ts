@@ -4,8 +4,12 @@ import { join } from "node:path";
 export const WELCOME_CONFIG_DIR = "pi-welcome-screen";
 
 function getDefaultAgentDirs() {
-  const homeDir = getHomeDir();
-  return [join(homeDir, ".pi", "agent"), join(homeDir, ".omp", "agent")];
+	const homeDir = getHomeDir();
+	return [join(homeDir, ".pi", "agent"), join(homeDir, ".omp", "agent")];
+}
+
+function getConfiguredAgentDir() {
+	return process.env.PI_CODING_AGENT_DIR?.trim() ?? "";
 }
 
 export function getHomeDir() {
@@ -31,10 +35,22 @@ export function uniquePaths(paths) {
 }
 
 export function getAgentDirCandidates() {
-  const configuredAgentDir = process.env.PI_CODING_AGENT_DIR?.trim();
-  return uniquePaths([configuredAgentDir ?? "", ...getDefaultAgentDirs()]);
+	return uniquePaths([getConfiguredAgentDir(), ...getDefaultAgentDirs()]);
+}
+
+export function getConfiguredWelcomeConfigDirs() {
+	const configuredAgentDir = getConfiguredAgentDir();
+	return configuredAgentDir ? [join(configuredAgentDir, WELCOME_CONFIG_DIR)] : [];
+}
+
+export function getDefaultWelcomeConfigDirs() {
+	return getDefaultAgentDirs().map((dir) => join(dir, WELCOME_CONFIG_DIR));
+}
+
+export function getSharedWelcomeConfigPath() {
+	return join(getHomeDir(), ".config", "codesook-omp", "welcome-screen.json");
 }
 
 export function getWelcomeConfigDirs() {
-  return getAgentDirCandidates().map((dir) => join(dir, WELCOME_CONFIG_DIR));
+	return getAgentDirCandidates().map((dir) => join(dir, WELCOME_CONFIG_DIR));
 }

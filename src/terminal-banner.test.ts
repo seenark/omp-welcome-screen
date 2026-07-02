@@ -208,6 +208,37 @@ test("terminal banner process coalesces repeated updates within a frame window",
 	}
 });
 
+test("terminal banner process keeps previous frame across slow clear redraw", async () => {
+	const snapshots: string[] = [];
+	const command = `${JSON.stringify(process.execPath)} -e ${JSON.stringify(
+		"process.stdout.write('\\u001b[2J\\u001b[1;1HOLD\\nFRAME'); setTimeout(() => process.stdout.write('\\u001b[2J\\u001b[1;1HNEW'), 80); setTimeout(() => process.stdout.write('\\nFRAME'), 220); setTimeout(() => {}, 340);",
+	)}`;
+	const processBanner = new TerminalBannerProcess({
+		command,
+		rows: 2,
+		columns: 8,
+		frameDelayMs: 50,
+		onFrame() {
+			snapshots.push(stripAnsi(processBanner.getLines().join("\n")));
+		},
+		debug: false,
+	});
+
+	try {
+		processBanner.start();
+		await Bun.sleep(430);
+
+		expect(snapshots.some((snapshot) => snapshot.includes("HOLD") && snapshot.includes("FRAME"))).toBe(true);
+		expect(snapshots.some((snapshot) => snapshot.includes("NEW") && !snapshot.includes("FRAME"))).toBe(false);
+		const finalRendered = stripAnsi(processBanner.getLines().join("\n"));
+		expect(finalRendered).toContain("NEW");
+		expect(finalRendered).toContain("FRAME");
+	} finally {
+		processBanner.stop();
+	}
+});
+
+
 test("terminal banner process passes force color environment", async () => {
 	const command = `${JSON.stringify(process.execPath)} -e ${JSON.stringify(
 		"process.stdout.write(process.env.FORCE_COLOR + ':' + process.env.COLORTERM + ':' + process.env.CLICOLOR_FORCE)",
@@ -258,6 +289,34 @@ test("terminal banner process preserves compound cli color through pty", async (
 		processBanner.stop();
 	}
 });
+
+test("terminal banner process decodes split utf8 glyphs without replacement characters", async () => {
+	const command = `${JSON.stringify(process.execPath)} -e ${JSON.stringify(
+		"process.stdout.write(Buffer.from([0xe2])); setTimeout(() => process.stdout.write(Buffer.from([0x94, 0x97])), 20); setTimeout(() => {}, 80);",
+	)}`;
+	const processBanner = new TerminalBannerProcess({
+		command,
+		rows: 1,
+		columns: 4,
+		frameDelayMs: 0,
+		onFrame() {
+			return undefined;
+		},
+		debug: false,
+	});
+
+	try {
+		processBanner.start();
+		await Bun.sleep(180);
+		const rendered = stripAnsi(processBanner.getLines().join("\n"));
+
+		expect(rendered).toContain("┗");
+		expect(rendered).not.toContain("�");
+	} finally {
+		processBanner.stop();
+	}
+});
+
 
 test("terminal banner process preserves final frame on python pty exit", async () => {
 	const bunRuntime = globalThis.Bun as typeof Bun & { Terminal: typeof Bun.Terminal };

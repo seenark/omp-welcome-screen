@@ -15,6 +15,12 @@ let tempRoot = "";
 let homeDir = "";
 let cwd = "";
 
+function writeSharedConfig(config: Record<string, unknown>) {
+	const configDir = join(homeDir, ".config", "codesook-omp");
+	mkdirSync(configDir, { recursive: true });
+	writeFileSync(join(configDir, "welcome-screen.json"), JSON.stringify(config));
+}
+
 beforeEach(() => {
 	tempRoot = mkdtempSync(join(tmpdir(), "pi-welcome-screen-config-"));
 	homeDir = join(tempRoot, "home");
@@ -71,6 +77,21 @@ test("loadConfig reads ~/.pi/agent/pi-welcome-screen/settings.json", () => {
 	expect(loadConfig().mainText).toBe("from-pi-agent");
 });
 
+test("loadConfig reads ~/.config/codesook-omp/welcome-screen.json", () => {
+	writeSharedConfig({ mainText: "from-shared-config", animationStyle: "static" });
+
+	expect(loadConfig().mainText).toBe("from-shared-config");
+});
+
+test("loadConfig prefers shared config over legacy ~/.pi agent settings", () => {
+	const piConfigDir = join(homeDir, ".pi", "agent", "pi-welcome-screen");
+	mkdirSync(piConfigDir, { recursive: true });
+	writeFileSync(join(piConfigDir, "settings.json"), JSON.stringify({ mainText: "pi" }));
+	writeSharedConfig({ mainText: "shared" });
+
+	expect(loadConfig().mainText).toBe("shared");
+});
+
 test("loadConfig prefers ~/.pi over ~/.omp", () => {
 	const piConfigDir = join(homeDir, ".pi", "agent", "pi-welcome-screen");
 	const ompConfigDir = join(homeDir, ".omp", "agent", "pi-welcome-screen");
@@ -103,6 +124,7 @@ test("loadConfig prefers PI_CODING_AGENT_DIR override", () => {
 		join(customAgentDir, "pi-welcome-screen", "settings.json"),
 		JSON.stringify({ mainText: "custom" }),
 	);
+	writeSharedConfig({ mainText: "shared" });
 	process.env.PI_CODING_AGENT_DIR = customAgentDir;
 
 	expect(loadConfig().mainText).toBe("custom");
@@ -111,12 +133,7 @@ test("loadConfig prefers PI_CODING_AGENT_DIR override", () => {
 test("loadConfig includes terminal banner command default and override", () => {
 	expect(loadConfig().terminalBannerCommand).toBe("");
 
-	const configDir = join(homeDir, ".pi", "agent", "pi-welcome-screen");
-	mkdirSync(configDir, { recursive: true });
-	writeFileSync(
-		join(configDir, "settings.json"),
-		JSON.stringify({ terminalBannerCommand: "ascii-aniation run" }),
-	);
+	writeSharedConfig({ terminalBannerCommand: "ascii-aniation run" });
 
 	expect(loadConfig().terminalBannerCommand).toBe("ascii-aniation run");
 });
@@ -126,17 +143,11 @@ test("loadConfig includes terminal banner sizing defaults and overrides", () => 
 	expect(loadConfig().terminalBannerColumns).toBe(0);
 	expect(loadConfig().terminalBannerFrameDelayMs).toBe(33);
 
-	const configDir = join(homeDir, ".pi", "agent", "pi-welcome-screen");
-	mkdirSync(configDir, { recursive: true });
-	writeFileSync(
-		join(configDir, "settings.json"),
-		JSON.stringify({
-			terminalBannerRows: 10,
-			terminalBannerColumns: 100,
-			terminalBannerFrameDelayMs: 50,
-		}),
-	);
-
+	writeSharedConfig({
+		terminalBannerRows: 10,
+		terminalBannerColumns: 100,
+		terminalBannerFrameDelayMs: 50,
+	});
 	const config = loadConfig();
 	expect(config.terminalBannerRows).toBe(10);
 	expect(config.terminalBannerColumns).toBe(100);
@@ -153,12 +164,7 @@ test("loadBannerFile reads ~/.pi/agent/pi-welcome-screen/banner.txt", () => {
 });
 
 test("loadBannerFile expands ~/ in explicit bannerFile", () => {
-	const configDir = join(homeDir, ".pi", "agent", "pi-welcome-screen");
-	mkdirSync(configDir, { recursive: true });
-	writeFileSync(
-		join(configDir, "settings.json"),
-		JSON.stringify({ bannerFile: "~/custom-banner.txt", animationStyle: "static" }),
-	);
+	writeSharedConfig({ bannerFile: "~/custom-banner.txt", animationStyle: "static" });
 	writeFileSync(join(homeDir, "custom-banner.txt"), "Custom\nBanner\n");
 
 	expect(loadBannerFile(loadConfig())).toEqual(["Custom", "Banner"]);
